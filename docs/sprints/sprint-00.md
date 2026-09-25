@@ -101,7 +101,7 @@ Clone → `make up` → navegador mostra a página inicial com os três componen
 
 ## 10. Andamento
 
-**Implementado (25/09/2026):** H0.1 a H0.7.
+**Implementado (25/09/2026):** H0.1 a H0.7 — Definition of Done completa.
 
 | Verificação | Resultado |
 |-------------|-----------|
@@ -112,7 +112,7 @@ Clone → `make up` → navegador mostra a página inicial com os três componen
 | `/health` com dependências reais → 200, três componentes OK | ✔ |
 | API → Redis → worker: `ping-worker` executado pelo worker | ✔ (local e em containers) |
 | `make up-app`: imagens de API e worker construídas, rodando como usuário sem privilégios | ✔ |
-| CI verde no primeiro PR / tempo < 5 min | ⏳ pendente — repositório ainda sem remoto no GitHub |
+| CI verde no GitHub Actions / tempo < 5 min | ✔ primeira execução verde em ~1 min (backend 47 s, web 25 s) |
 
 Decisões tomadas durante a implementação:
 - TypeScript fixado em 6.x porque o typescript-eslint ainda não suporta o TypeScript 7.
