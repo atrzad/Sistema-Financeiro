@@ -17,6 +17,8 @@ x-backend-env: &backend-env
   S3_BUCKET_COMPROVANTES: ${S3_BUCKET_COMPROVANTES:-comprovantes}
   S3_BUCKET_EXPORTS: ${S3_BUCKET_EXPORTS:-exports}
   CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:5173}
+  JWT_SECRET: ${JWT_SECRET}
+  COOKIE_SECURE: ${COOKIE_SECURE:-true}
 
 services:
   postgres:

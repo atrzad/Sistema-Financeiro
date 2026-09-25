@@ -62,20 +62,20 @@ RF10 · RNF03 · parte do item "Auth" da stack (JWT + refresh + RBAC)
 ## 4. Tarefas técnicas
 
 **Dados**
-- [ ] Migração `0002_auth`: `tenants.slug`, `users`, `refresh_tokens`, policies
-- [ ] Função `resolve_tenant(slug) RETURNS uuid SECURITY DEFINER` (única brecha controlada, usada só no login)
-- [ ] `GRANT` mínimos para `app_user` (SELECT/INSERT/UPDATE/DELETE por tabela, sem DDL)
+- [x] Migração `0002_auth`: `tenants.slug`, `users`, `refresh_tokens`, policies
+- [x] Função `resolve_tenant(slug) RETURNS uuid SECURITY DEFINER` (única brecha controlada, usada só no login)
+- [x] `GRANT` mínimos para `app_user` (SELECT/INSERT/UPDATE/DELETE por tabela, sem DDL)
 
 **Backend**
-- [ ] `app/core/security.py`: hash Argon2id, emissão/validação JWT (PyJWT, HS256 em dev, chave via env; RS256 opcional em prod)
-- [ ] `app/api/deps.py`: `get_current_user`, `get_tenant_session`, `require_role`
-- [ ] `app/api/v1/auth.py`, `app/api/v1/users.py`
-- [ ] Rate limit com `slowapi` + Redis
-- [ ] CLI `seed`
+- [x] `app/core/security.py`: hash Argon2id, emissão/validação JWT (PyJWT, HS256 em dev, chave via env; RS256 opcional em prod)
+- [x] `app/api/deps.py`: `get_current_user`, `get_tenant_session`, `require_role`
+- [x] `app/api/v1/auth.py`, `app/api/v1/users.py`
+- [x] Rate limit com `slowapi` + Redis
+- [x] CLI `seed`
 
 **Frontend**
-- [ ] `features/auth/` (LoginPage, `useAuth`, `AuthProvider`)
-- [ ] Interceptor de refresh e `ProtectedRoute`
+- [x] `features/auth/` (LoginPage, `useAuth`, `AuthProvider`)
+- [x] Interceptor de refresh e `ProtectedRoute`
 
 ## 5. Contrato de API
 
@@ -109,5 +109,27 @@ RF10 · RNF03 · parte do item "Auth" da stack (JWT + refresh + RBAC)
 ## 9. Entregável / demo
 Login como `colaborador@acme` e `colaborador@globex`; demonstrar no `psql` (como `app_api`) que sem `SET LOCAL` nada aparece e com o tenant de um nada do outro aparece.
 
-## 10. Retrospectiva
+## 10. Andamento
+
+**Implementado (25/09/2026):** H1.1 a H1.7.
+
+| Verificação | Resultado |
+|-------------|-----------|
+| Backend: ruff, mypy strict | ✔ |
+| Backend: pytest com Postgres real | ✔ 66 testes — login, refresh com rotação e detecção de reuso, logout, bloqueio após 5 falhas, RBAC, gestão de usuários, RLS (metadados, isolamento, escrita cruzada, vazamento entre transações na mesma conexão) |
+| Web: vitest | ✔ 27 testes — login, rotas protegidas, renovação automática (single-flight), layout por perfil |
+| Ponta a ponta contra a API em container | ✔ login, cookie `HttpOnly; Secure; SameSite=Strict; Path=/api/v1/auth`, refresh, roubo de token derruba a sessão, 403 para colaborador, 429 após 5 falhas |
+| E2E Playwright | ⏳ adiado — coberto por testes de componente + roteiro ponta a ponta via HTTP; Playwright entra quando houver fluxo de negócio (Sprint 02) |
+
+Decisões tomadas durante a implementação:
+- **Refresh token no formato `<tenant_id>.<aleatório>`**: o tenant (não secreto) permite abrir a transação com `SET LOCAL` antes de consultar `refresh_tokens` sob RLS, sem precisar de outra função `SECURITY DEFINER`. No banco fica só o SHA-256.
+- **`resolve_tenant(slug)`** roda como `app_owner` (dono das tabelas); como o RLS é forçado também para o dono, foi criada uma policy exclusiva de leitura em `tenants` para `app_owner`. `app_api` continua sem enxergar outras empresas.
+- **Mensagem única para credencial inválida** (empresa, e-mail ou senha) e verificação de hash "falsa" quando o usuário não existe, para não revelar cadastros pelo tempo de resposta.
+- **Admin não pode se desativar nem remover o próprio papel de admin** (evita empresa sem administrador). Desativar um usuário revoga todas as sessões dele na hora.
+- **Colaborador sempre com nível 0; aprovador com nível 1 ou 2** — validado na API e na tela.
+- **Tela de Usuários** (admin) adicionada na web, além da API prevista, para permitir testar a gestão de usuários pela interface.
+- **Banco de testes separado (`financeiro_test`)**: a suíte limpa tabelas entre testes e estava apagando os dados de desenvolvimento.
+- **Erros no formato Problem Details (RFC 9457)** implementados globalmente, inclusive para erros de validação (`errors: [{campo, erro}]`).
+
+## 11. Retrospectiva
 _Preencher ao final da sprint._

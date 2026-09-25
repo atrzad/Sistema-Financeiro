@@ -1,7 +1,7 @@
 # Atalhos de desenvolvimento. Requer: docker, uv, pnpm.
 COMPOSE = docker compose --env-file .env -f infra/docker-compose.yml
 
-.PHONY: help up up-app down logs migrate api worker web test test-backend test-web lint fmt
+.PHONY: help up up-app down logs migrate seed api worker web test test-backend test-web lint fmt
 
 help: ## Lista os comandos
 	@grep -E '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  %-14s %s\n", $$1, $$2}'
@@ -20,6 +20,9 @@ logs: ## Logs dos containers
 
 migrate: ## Aplica migrações (como app_owner)
 	cd backend && uv run alembic upgrade head
+
+seed: ## Cria empresas e usuários de demonstração (senha Senha@123)
+	cd backend && uv run python -m app.cli seed
 
 api: ## API em modo dev (http://localhost:8000/docs)
 	cd backend && uv run fastapi dev app/main.py

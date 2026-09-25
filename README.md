@@ -2,7 +2,7 @@
 
 > Captura de comprovantes (boletos, recibos, notas fiscais) por scanner/câmera ou upload, extração automática via OCR, organização por faixa de valor e vencimento, controle de pagamento de boletos e geração de relatórios de prestação de contas — multiempresa, com isolamento por tenant.
 
-**Status:** [Sprint 00](docs/sprints/sprint-00.md) (fundação) implementada
+**Status:** Sprints [00](docs/sprints/sprint-00.md) (fundação) e [01](docs/sprints/sprint-01.md) (login e multiempresa) implementadas
 
 ---
 
@@ -147,7 +147,15 @@ make up                           # Postgres, Redis e storage S3 (com healthchec
 cd backend && uv sync && cd ..    # dependências do backend
 pnpm install                      # dependências do frontend
 make migrate                      # migrações como app_owner
+make seed                         # empresas e usuários de demonstração
 ```
+
+Usuários de demonstração (senha `Senha@123` para todos):
+
+| Empresa (campo "Empresa" no login) | Administrador | Aprovador nível 2 | Aprovador nível 1 | Colaborador |
+|---|---|---|---|---|
+| `acme` — ACME Comércio Ltda | admin@acme.com.br | gestor@acme.com.br | aprovador@acme.com.br | colaborador@acme.com.br |
+| `globex` — Globex Serviços S.A. | admin@globex.com.br | gestor@globex.com.br | aprovador@globex.com.br | colaborador@globex.com.br |
 
 Em terminais separados:
 
@@ -171,7 +179,7 @@ make lint     # ruff, mypy, prettier, eslint, tsc
 make help     # todos os atalhos
 ```
 
-Os testes de integração do backend (roles do banco, migrações) rodam quando o Postgres está no ar e são pulados caso contrário. No CI rodam sempre.
+Os testes de integração do backend rodam contra o banco separado `financeiro_test` (nunca o de desenvolvimento, pois limpam tabelas) quando o Postgres está no ar, e são pulados caso contrário. No CI rodam sempre.
 
 ## Roadmap e sprints
 

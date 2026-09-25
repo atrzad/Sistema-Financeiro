@@ -57,6 +57,7 @@ jobs:
       REDIS_URL: redis://localhost:6379/0
       S3_ACCESS_KEY: ci
       S3_SECRET_KEY: ci
+      JWT_SECRET: ci-segredo-de-teste-com-pelo-menos-32-caracteres
     steps:
       - uses: actions/checkout@v4
       - name: Dependências do sistema
@@ -73,6 +74,7 @@ jobs:
         run: |
           psql -v ON_ERROR_STOP=1 -U postgres -d financeiro -f 01-extensions.sql
           ./02-roles.sh
+          ./03-test-db.sh
       - uses: astral-sh/setup-uv@v6
         with:
           enable-cache: true

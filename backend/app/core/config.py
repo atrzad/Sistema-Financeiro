@@ -9,7 +9,7 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Annotated
 
-from pydantic import Field, PostgresDsn, RedisDsn, field_validator
+from pydantic import Field, PostgresDsn, RedisDsn, SecretStr, field_validator
 from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 _ROOT_ENV = Path(__file__).resolve().parents[3] / ".env"
@@ -49,6 +49,15 @@ class Settings(BaseSettings):
     cors_origins: Annotated[list[str], NoDecode] = Field(default_factory=list)
 
     health_check_timeout_s: float = 2.0
+
+    # --- Autenticação (Sprint 01) ---
+    jwt_secret: SecretStr = Field(min_length=32)
+    jwt_algorithm: str = "HS256"
+    access_token_ttl_minutes: int = 15
+    refresh_token_ttl_days: int = 7
+    cookie_secure: bool = True
+    login_max_failures: int = 5
+    login_failure_window_s: int = 15 * 60
 
     @field_validator("cors_origins", mode="before")
     @classmethod
