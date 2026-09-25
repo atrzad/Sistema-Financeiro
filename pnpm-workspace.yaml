@@ -1,0 +1,4 @@
+packages:
+  - web
+  - packages/*
+  # - mobile   # habilitado na Sprint 10

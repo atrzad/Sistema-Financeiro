@@ -1,0 +1,7 @@
+{
+  "name": "@financeiro/api-client",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Cliente TypeScript gerado a partir do OpenAPI da API (geração implementada na Sprint 02, H2.6).",
+  "scripts": {}
+}

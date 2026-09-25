@@ -1,0 +1,102 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      backend: ${{ steps.filter.outputs.backend }}
+      web: ${{ steps.filter.outputs.web }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            backend:
+              - 'backend/**'
+              - 'infra/postgres/**'
+              - '.github/workflows/ci.yml'
+            web:
+              - 'web/**'
+              - 'packages/**'
+              - 'package.json'
+              - 'pnpm-lock.yaml'
+              - '.github/workflows/ci.yml'
+
+  backend:
+    needs: changes
+    if: needs.changes.outputs.backend == 'true'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: financeiro
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres" --health-interval 5s
+          --health-timeout 3s --health-retries 10
+    env:
+      ENVIRONMENT: test
+      DATABASE_URL: postgresql+asyncpg://app_api:api_ci@localhost:5432/financeiro
+      DATABASE_URL_OWNER: postgresql+asyncpg://app_owner:owner_ci@localhost:5432/financeiro
+      REDIS_URL: redis://localhost:6379/0
+      S3_ACCESS_KEY: ci
+      S3_SECRET_KEY: ci
+    steps:
+      - uses: actions/checkout@v4
+      - name: Dependências do sistema
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends libmagic1 postgresql-client
+      - name: Inicializar banco (extensões e roles)
+        working-directory: infra/postgres/init
+        env:
+          PGHOST: localhost
+          PGPASSWORD: postgres
+          POSTGRES_USER: postgres
+          POSTGRES_DB: financeiro
+          APP_OWNER_PASSWORD: owner_ci
+          APP_API_PASSWORD: api_ci
+        run: |
+          psql -v ON_ERROR_STOP=1 -U postgres -d financeiro -f 01-extensions.sql
+          ./02-roles.sh
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+          cache-dependency-glob: backend/uv.lock
+      - run: uv sync --frozen
+      - run: uv run ruff check .
+      - run: uv run ruff format --check .
+      - run: uv run mypy app tests
+      - run: uv run pytest -q
+
+  web:
+    needs: changes
+    if: needs.changes.outputs.web == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm format:check
+      - run: pnpm -r lint
+      - run: pnpm -r typecheck
+      - run: pnpm -r test
+      - run: pnpm -r build
