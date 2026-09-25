@@ -59,7 +59,7 @@ A matriz completa (incluindo requisitos não funcionais) está em [`docs/sprints
 | Backend / API | Python 3.12, FastAPI, Pydantic v2, SQLAlchemy 2.0 (async), Alembic |
 | Banco de dados | PostgreSQL 16 — Row Level Security, JSONB, `pg_trgm`, `btree_gist` |
 | Processamento assíncrono | Celery + Redis |
-| Armazenamento de arquivos | S3-compatible (MinIO em dev, AWS S3 em produção) via presigned URLs |
+| Armazenamento de arquivos | S3-compatible (RustFS em dev, AWS S3 em produção) via presigned URLs |
 | OCR | Adapter `OcrProvider`: Tesseract/PaddleOCR (dev) · Veryfi / Mindee / Taggun (produção) |
 | Frontend web | React 18, TypeScript, Vite, TanStack Query, React Router, React Hook Form + Zod |
 | Mobile | React Native (Expo, dev build) + ML Kit Document Scanner |
@@ -126,7 +126,7 @@ Estrutura do monorepo (pastas vazias são preenchidas nas próximas sprints):
 ├── web/                    # React + TypeScript + Vite
 ├── mobile/                 # React Native (Expo)
 ├── infra/
-│   ├── docker-compose.yml  # postgres, redis, minio, api, worker
+│   ├── docker-compose.yml  # postgres, redis, storage (RustFS), api, worker
 │   └── postgres/init/      # extensões, roles
 ├── docs/
 │   ├── arquitetura.md
@@ -143,7 +143,7 @@ Pré-requisitos: Docker + Docker Compose, [uv](https://github.com/astral-sh/uv),
 
 ```bash
 cp .env.example .env              # ajuste senhas se quiser
-make up                           # Postgres, Redis e MinIO (com healthcheck)
+make up                           # Postgres, Redis e storage S3 (com healthcheck)
 cd backend && uv sync && cd ..    # dependências do backend
 pnpm install                      # dependências do frontend
 make migrate                      # migrações como app_owner

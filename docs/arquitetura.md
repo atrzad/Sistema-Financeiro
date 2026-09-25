@@ -176,6 +176,6 @@ O motor `services/export/tabular.py` recebe a mesma *query* usada pela listagem 
 
 | Ambiente | Banco | Storage | OCR |
 |----------|-------|---------|-----|
-| `local` | Postgres em Docker | MinIO | Tesseract (adapter local) |
+| `local` | Postgres em Docker | RustFS (S3-compatible) | Tesseract (adapter local) |
 | `staging` | Postgres gerenciado | S3 (bucket staging) | Provedor pago em modo sandbox |
 | `production` | Postgres gerenciado + backups PITR | S3 com Object Lock | Provedor pago |

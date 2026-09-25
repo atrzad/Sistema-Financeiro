@@ -60,11 +60,11 @@ RF01 (web) · RF11 · RNF01 (parcial) · RNF02 · RNF07 · RNF08 · Tela 1
 - [ ] Migração `0004_uploads`: `upload_batches`, `comprovantes` (com `storage_key`, `sha256`, `tamanho_bytes`, `nome_original`, status estendidos), RLS
 
 **Backend**
-- [ ] `services/storage.py`: interface `ObjectStorage` (`presign_put`, `presign_get`, `get_stream`, `move`), implementação boto3 compatível com MinIO/S3
+- [ ] `services/storage.py`: interface `ObjectStorage` (`presign_put`, `presign_get`, `get_stream`, `move`), implementação boto3 compatível com qualquer S3 (RustFS em dev, AWS S3 em produção)
 - [ ] `services/upload_validation.py`: três camadas como funções puras testáveis sobre `bytes`
 - [ ] `workers/tasks/validar_arquivo.py` (fila `validation`, timeout 60s)
 - [ ] Cache de status do lote em Redis (hash `batch:{id}`)
-- [ ] Configuração CORS do bucket MinIO para `PUT` do frontend
+- [ ] Configuração CORS do bucket de dev (RustFS) para `PUT` do frontend
 
 **Frontend**
 - [ ] `features/upload/` — `UploadPage`, `useUploadQueue` (fila com concorrência 4, retry, cancelamento via `AbortController`)
@@ -83,7 +83,7 @@ RF01 (web) · RF11 · RNF01 (parcial) · RNF02 · RNF07 · RNF08 · Tela 1
 
 ## 6. Estratégia de testes
 - Unidade (validação): corpus de fixtures maliciosas — PDF com extensão `.png`, PNG renomeado para `.pdf`, PDF criptografado, PDF com JavaScript, zip-bomb/decompression bomb, arquivo truncado, arquivo vazio, polyglot PDF/JPEG.
-- Integração: fluxo completo contra MinIO real (testcontainers): criar lote → PUT → complete → worker → status.
+- Integração: fluxo completo contra storage S3 real (RustFS) (testcontainers): criar lote → PUT → complete → worker → status.
 - Limites: 11 arquivos, 10 MB + 1 byte, total 60 MB + 1 byte.
 - Frontend: `useUploadQueue` (concorrência, retry, cancelamento) com MSW; E2E enviando 10 arquivos.
 
@@ -97,7 +97,7 @@ RF01 (web) · RF11 · RNF01 (parcial) · RNF02 · RNF07 · RNF08 · Tela 1
 | Risco | Mitigação |
 |-------|-----------|
 | Cliente não chama `/complete` (fechou a aba) | Job `maintenance` varre comprovantes em `enviando` > 30 min e verifica se o objeto existe (`HEAD`) |
-| CORS/presigned difícil de depurar entre MinIO e S3 | Testes de integração contra MinIO e documentação da policy de bucket |
+| CORS/presigned difícil de depurar entre RustFS e S3 | Testes de integração contra RustFS e documentação da policy de bucket |
 | Object Lock impede limpeza em dev | Modo *governance* em dev, com role de admin para bypass |
 
 ## 9. Entregável / demo

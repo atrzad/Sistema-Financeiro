@@ -23,9 +23,9 @@ Nenhum RF diretamente — habilita todos. Prepara RNF03 (roles de banco) e RNF01
 - **Dado** o repositório, **então** existem `backend/`, `web/`, `mobile/` (placeholder), `infra/`, `packages/api-client/`, `docs/`, `.editorconfig`, `.env.example`.
 
 ### H0.2 — Infraestrutura local com Docker Compose `3 pts`
-- **Quando** executo `docker compose -f infra/docker-compose.yml up -d`, **então** Postgres 16, Redis 7 e MinIO sobem com healthchecks verdes.
+- **Quando** executo `docker compose -f infra/docker-compose.yml up -d`, **então** Postgres 16, Redis 7 e o storage S3 (RustFS) sobem com healthchecks verdes.
 - **Então** o Postgres já tem as extensões `pgcrypto`, `pg_trgm`, `btree_gist` e as roles `app_owner`, `app_user`, `app_api` criadas por script em `infra/postgres/init/`.
-- **Então** o MinIO tem os buckets `comprovantes` (versionamento ligado) e `exports` criados por um container `minio-init`.
+- **Então** o storage tem os buckets `comprovantes` (versionamento ligado) e `exports` criados por um container `storage-init`.
 
 ### H0.3 — Esqueleto da API `3 pts`
 - **Quando** acesso `GET /api/v1/health`, **então** recebo `200` com status de Postgres, Redis e storage.
@@ -53,7 +53,7 @@ Nenhum RF diretamente — habilita todos. Prepara RNF03 (roles de banco) e RNF01
 ## 4. Tarefas técnicas
 
 **Infra**
-- [x] `infra/docker-compose.yml` com `postgres`, `redis`, `minio`, `minio-init`, `api`, `worker` (profiles `infra` e `app`)
+- [x] `infra/docker-compose.yml` com `postgres`, `redis`, `storage`, `storage-init`, `api`, `worker` (profiles `infra` e `app`)
 - [x] `infra/postgres/init/01-extensions.sql`, `02-roles.sql`
 - [x] `Makefile` com alvos `up`, `down`, `migrate`, `test`, `lint`, `fmt`
 
@@ -106,17 +106,21 @@ Clone → `make up` → navegador mostra a página inicial com os três componen
 | Verificação | Resultado |
 |-------------|-----------|
 | Backend: ruff, ruff format, mypy strict | ✔ |
-| Backend: pytest | ✔ 15 passaram · 6 de integração pulados (sem Postgres no ambiente de desenvolvimento) |
+| Backend: pytest com Postgres real | ✔ 21 testes (inclui roles, RLS-ready e upgrade/downgrade de migrações) |
 | Web: prettier, eslint, tsc, vitest (10 testes), build | ✔ |
-| `docker compose config` | ✔ válido |
-| API real sem dependências → `/health` responde 503 em ~0,3 s com cada componente em erro | ✔ |
-| `make up && make migrate && make test` num clone limpo, com Docker | ⏳ pendente — daemon Docker indisponível na máquina de desenvolvimento |
+| `make up` → Postgres, Redis e storage saudáveis; roles e extensões criadas; buckets criados | ✔ |
+| `/health` com dependências reais → 200, três componentes OK | ✔ |
+| API → Redis → worker: `ping-worker` executado pelo worker | ✔ (local e em containers) |
+| `make up-app`: imagens de API e worker construídas, rodando como usuário sem privilégios | ✔ |
 | CI verde no primeiro PR / tempo < 5 min | ⏳ pendente — repositório ainda sem remoto no GitHub |
 
 Decisões tomadas durante a implementação:
 - TypeScript fixado em 6.x porque o typescript-eslint ainda não suporta o TypeScript 7.
 - `/health` responde **503** (em vez de 200) quando algum componente falha, com o mesmo corpo — load balancers e monitores entendem o status sem ler o JSON; o frontend trata o 503 como dado.
-- Bucket `comprovantes` criado já com Object Lock (`mc mb --with-lock`), pois o Object Lock só pode ser ligado na criação do bucket.
+- Bucket `comprovantes` criado já com Object Lock, pois o Object Lock só pode ser ligado na criação do bucket.
+- **MinIO substituído por RustFS** no ambiente de desenvolvimento: a MinIO deixou de publicar imagens da edição comunitária (Docker Hub sem imagem, quay.io exige login). RustFS é S3-compatible, com versionamento e Object Lock verificados; os buckets são criados com o `aws-cli` oficial. Produção continua em AWS S3 — nenhum código depende do fornecedor.
+- **Portas do host configuráveis** (`POSTGRES_PORT`, `REDIS_PORT`, `S3_PORT`, `S3_CONSOLE_PORT`), para conviver com outros projetos que já usem 5432/6379.
+- Testes carregam o `.env` da raiz antes dos padrões — evita que apontem para o banco de outro projeto.
 
 ## 11. Retrospectiva
 _Preencher ao final da sprint._

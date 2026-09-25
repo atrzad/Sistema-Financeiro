@@ -1,19 +1,24 @@
 import os
+from pathlib import Path
 
-# Valores padrão para os testes unitários (não abrem conexão). Variáveis reais
-# do ambiente (ex.: CI) têm precedência.
+from dotenv import dotenv_values
+
+# Valores padrão para os testes unitários (não abrem conexão). Precedência:
+# variáveis de ambiente reais (ex.: CI) > .env da raiz do monorepo > padrões abaixo.
 _DEFAULTS = {
-    "ENVIRONMENT": "test",
     "DATABASE_URL": "postgresql+asyncpg://app_api:api_dev_password@localhost:5432/financeiro",
     "DATABASE_URL_OWNER": "postgresql+asyncpg://app_owner:owner_dev_password@localhost:5432/financeiro",
     "REDIS_URL": "redis://localhost:6379/0",
     "S3_ENDPOINT_URL": "http://localhost:9000",
-    "S3_ACCESS_KEY": "minioadmin",
-    "S3_SECRET_KEY": "minioadmin",
+    "S3_ACCESS_KEY": "devaccesskey",
+    "S3_SECRET_KEY": "devsecretkey123",
     "CORS_ORIGINS": "http://localhost:5173",
 }
-for key, value in _DEFAULTS.items():
+_ROOT_ENV = Path(__file__).resolve().parents[2] / ".env"
+_file_values = {k: v for k, v in dotenv_values(_ROOT_ENV).items() if v is not None}
+for key, value in {**_DEFAULTS, **_file_values}.items():
     os.environ.setdefault(key, value)
+os.environ["ENVIRONMENT"] = "test"
 
 from collections.abc import Callable, Iterator  # noqa: E402
 

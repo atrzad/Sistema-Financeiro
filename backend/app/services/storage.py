@@ -1,4 +1,4 @@
-"""Acesso ao storage S3-compatible (MinIO em dev, AWS S3 em produção)."""
+"""Acesso ao storage S3-compatible (RustFS em dev, AWS S3 em produção)."""
 
 from functools import lru_cache
 from typing import TYPE_CHECKING

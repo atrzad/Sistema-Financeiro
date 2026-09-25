@@ -6,7 +6,7 @@ COMPOSE = docker compose --env-file .env -f infra/docker-compose.yml
 help: ## Lista os comandos
 	@grep -E '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  %-14s %s\n", $$1, $$2}'
 
-up: ## Sobe Postgres, Redis e MinIO
+up: ## Sobe Postgres, Redis e storage S3 (RustFS)
 	$(COMPOSE) --profile infra up -d --wait
 
 up-app: ## Sobe tudo em containers (infra + API + worker)

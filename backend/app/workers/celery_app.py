@@ -4,10 +4,12 @@ from celery import Celery
 from kombu import Queue
 
 from app.core.config import get_settings
+from app.core.logging import configure_logging
 
 QUEUES = ("validation", "ocr", "reports", "maintenance")
 
 settings = get_settings()
+configure_logging(settings.log_level, json=not settings.is_local)
 
 celery_app = Celery(
     "financeiro",
@@ -26,6 +28,8 @@ celery_app.conf.update(
     task_reject_on_worker_lost=True,
     worker_prefetch_multiplier=1,
     result_expires=3600,
+    # Logs da aplicação saem direto pelo structlog, sem o Celery reclassificá-los.
+    worker_redirect_stdouts=False,
     timezone="America/Sao_Paulo",
     enable_utc=True,
 )
