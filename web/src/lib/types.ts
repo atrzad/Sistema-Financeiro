@@ -1,42 +1,29 @@
-/** Tipos da API. Serão gerados do OpenAPI a partir da Sprint 02 (H2.6). */
+/** Tipos da API: gerados do OpenAPI em @financeiro/api-client (H2.6). */
 
-export type Role = 'admin' | 'aprovador' | 'colaborador'
+import type { FormaPagamento, Role, StatusEfetivo } from '@financeiro/api-client'
 
-export interface TenantInfo {
-  id: string
-  nome: string
-  slug: string
-}
-
-export interface Me {
-  id: string
-  nome: string
-  email: string
-  role: Role
-  nivel_aprovacao: number
-  tenant: TenantInfo
-}
-
-export interface TokenResponse {
-  access_token: string
-  token_type: 'bearer'
-  expires_in: number
-  user: Me
-}
-
-export interface UserOut {
-  id: string
-  nome: string
-  email: string
-  role: Role
-  nivel_aprovacao: number
-  ativo: boolean
-  ultimo_login_em: string | null
-  created_at: string
-}
+export type * from '@financeiro/api-client'
 
 export const ROLE_LABELS: Record<Role, string> = {
   admin: 'Administrador',
   aprovador: 'Aprovador',
   colaborador: 'Colaborador',
+}
+
+export const FORMA_PAGAMENTO_LABELS: Record<FormaPagamento, string> = {
+  boleto: 'Boleto',
+  pix: 'Pix',
+  cartao: 'Cartão',
+  dinheiro: 'Dinheiro',
+  transferencia: 'Transferência',
+  outro: 'Outro',
+}
+
+export const STATUS_LABELS: Record<StatusEfetivo, string> = {
+  pendente: 'Pendente',
+  reagendado: 'Reagendado',
+  vence_hoje: 'Vence hoje',
+  atrasado: 'Atrasado',
+  pago: 'Pago',
+  rejeitado: 'Rejeitado',
 }

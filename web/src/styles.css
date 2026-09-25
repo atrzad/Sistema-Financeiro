@@ -404,3 +404,321 @@ tr.inativo td:nth-child(3) {
     display: none;
   }
 }
+
+/* --- Sprint 02: lançamentos, fornecedores e cadastros ---------------------------- */
+
+:root {
+  --warn: #9a6700;
+  --warn-soft: #fff4d6;
+  --error-soft: #fde8e6;
+  --ok-soft: #e3f4ea;
+  --neutral-soft: #eef1f6;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --warn: #e3b341;
+    --warn-soft: #3a2f12;
+    --error-soft: #3d1d1a;
+    --ok-soft: #173424;
+    --neutral-soft: #242c3a;
+  }
+}
+
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.75rem;
+}
+
+.page-header h1 {
+  margin: 0;
+}
+
+a.button,
+.button {
+  display: inline-block;
+  font: inherit;
+  padding: 0.4rem 0.9rem;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  text-decoration: none;
+  cursor: pointer;
+}
+
+a.button.primary {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: var(--surface);
+  font-weight: 600;
+}
+
+button.perigo {
+  color: var(--error);
+  border-color: var(--error);
+}
+
+.actions {
+  display: flex;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.tabs {
+  display: flex;
+  gap: 0.25rem;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 1rem;
+  overflow-x: auto;
+}
+
+.tab {
+  border: 0;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
+  background: none;
+  padding: 0.5rem 0.9rem;
+  color: var(--muted);
+}
+
+.tab.ativo {
+  color: var(--primary);
+  border-bottom-color: var(--primary);
+  font-weight: 600;
+}
+
+.badge {
+  display: inline-block;
+  padding: 0.15rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.badge-critico {
+  background: var(--error-soft);
+  color: var(--error);
+}
+
+.badge-alerta {
+  background: var(--warn-soft);
+  color: var(--warn);
+}
+
+.badge-neutro {
+  background: var(--neutral-soft);
+  color: var(--muted);
+}
+
+.badge-ok {
+  background: var(--ok-soft);
+  color: var(--ok);
+}
+
+.badge-apagado {
+  background: var(--neutral-soft);
+  color: var(--muted);
+  text-decoration: line-through;
+}
+
+tr.clicavel {
+  cursor: pointer;
+}
+
+tr.clicavel:hover,
+tr.clicavel:focus-visible {
+  background: var(--primary-soft);
+  outline: none;
+}
+
+td.truncar {
+  max-width: 280px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+td.acoes {
+  display: flex;
+  gap: 0.4rem;
+  justify-content: flex-end;
+}
+
+.carregar-mais {
+  padding: 0.75rem;
+  text-align: center;
+}
+
+.vazio {
+  padding: 1.5rem;
+  text-align: center;
+}
+
+.form-lancamento {
+  max-width: 860px;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+fieldset {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  min-width: 0;
+}
+
+.span-2 {
+  grid-column: 1 / -1;
+}
+
+.combobox {
+  position: relative;
+}
+
+.combobox input {
+  width: 100%;
+}
+
+.combobox-list {
+  position: absolute;
+  z-index: 10;
+  top: calc(100% + 2px);
+  left: 0;
+  right: 0;
+  margin: 0;
+  padding: 0.25rem 0;
+  list-style: none;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  box-shadow: 0 6px 18px rgb(0 0 0 / 0.12);
+  max-height: 280px;
+  overflow-y: auto;
+}
+
+.combobox-list li {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.45rem 0.75rem;
+  cursor: pointer;
+  font-weight: 400;
+}
+
+.combobox-list li.ativo {
+  background: var(--primary-soft);
+}
+
+.combobox-novo {
+  color: var(--primary);
+  font-weight: 600 !important;
+  border-top: 1px solid var(--border);
+}
+
+.combobox-vazio {
+  cursor: default !important;
+}
+
+.inline-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  padding: 0.75rem;
+  border: 1px dashed var(--border);
+  border-radius: 8px;
+  margin-bottom: 1rem;
+}
+
+.busca {
+  width: 100%;
+  max-width: 420px;
+  margin-bottom: 0.75rem;
+}
+
+.cadastros-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1rem;
+}
+
+.cadastro {
+  max-width: none;
+}
+
+.cadastro h2 {
+  margin-bottom: 0.5rem;
+}
+
+.cadastro-lista {
+  list-style: none;
+  margin: 0 0 0.75rem;
+  padding: 0;
+}
+
+.cadastro-lista li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.35rem 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.cadastro-lista li.inativo span {
+  color: var(--muted);
+  text-decoration: line-through;
+}
+
+.cadastro-novo {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.cadastro-novo input {
+  flex: 1;
+  min-width: 0;
+}
+
+.cadastro-novo input.codigo {
+  flex: 0 0 90px;
+}
+
+/* Lista de lançamentos vira cartões no celular */
+@media (max-width: 720px) {
+  .tabela-lancamentos thead {
+    display: none;
+  }
+
+  .tabela-lancamentos,
+  .tabela-lancamentos tbody,
+  .tabela-lancamentos tr,
+  .tabela-lancamentos td {
+    display: block;
+    width: 100%;
+  }
+
+  .tabela-lancamentos tr {
+    padding: 0.6rem 0.9rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .tabela-lancamentos td {
+    border: 0;
+    padding: 0.1rem 0;
+    white-space: normal;
+    text-align: left !important;
+  }
+
+  .tabela-lancamentos td[data-label='Categoria'],
+  .tabela-lancamentos td[data-label='Descrição'] {
+    color: var(--muted);
+    font-size: 0.85rem;
+  }
+}

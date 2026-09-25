@@ -56,19 +56,19 @@ Roadmap fase 1 ("CRUD manual") · base para RF03, RF05 · Tela 4 (versão simple
 ## 4. Tarefas técnicas
 
 **Dados**
-- [ ] Migração `0003_dominio`: `suppliers`, `categorias`, `projetos`, `centros_custo`, `lancamentos`, view `v_lancamentos` (`security_invoker`), índices, RLS
-- [ ] Trigger `set_updated_at` em todas as tabelas novas
+- [x] Migração `0003_dominio`: `suppliers`, `categorias`, `projetos`, `centros_custo`, `lancamentos`, view `v_lancamentos` (`security_invoker`), índices, RLS
+- [x] Trigger `set_updated_at` em todas as tabelas novas
 
 **Backend**
-- [ ] `domain/cnpj.py` (normalizar + validar DV), `domain/status.py` (`status_efetivo(status, prevista, hoje)`), `domain/clock.py`
-- [ ] Repositórios e services: `SupplierService`, `LancamentoService`
-- [ ] Routers `suppliers`, `categorias`, `projetos`, `centros-custo`, `lancamentos`
-- [ ] Paginação por cursor genérica (`app/api/pagination.py`)
+- [x] `domain/cnpj.py` (normalizar + validar DV), `domain/status.py` (`status_efetivo(status, prevista, hoje)`), `domain/clock.py`
+- [x] Repositórios e services: `SupplierService`, `LancamentoService`
+- [x] Routers `suppliers`, `categorias`, `projetos`, `centros-custo`, `lancamentos`
+- [x] Paginação por cursor genérica (`app/api/pagination.py`)
 
 **Frontend**
-- [ ] `features/lancamentos/` (ListaPage, FormPage, `useLancamentos`)
-- [ ] `features/fornecedores/` (autocomplete + modal de cadastro rápido)
-- [ ] Componentes `MoneyInput`, `DateInput`, `StatusBadge`
+- [x] `features/lancamentos/` (ListaPage, FormPage, `useLancamentos`)
+- [x] `features/fornecedores/` (autocomplete + modal de cadastro rápido)
+- [x] Componentes `MoneyInput`, `DateInput`, `StatusBadge`
 
 ## 5. Contrato de API
 
@@ -116,5 +116,28 @@ Exemplo de resposta de lançamento:
 ## 9. Entregável / demo
 Criar três lançamentos (vencido, vence hoje, vence em 10 dias) e mostrar a lista ordenada, com badges corretos e filtros funcionando.
 
-## 10. Retrospectiva
+## 10. Andamento
+
+**Implementado (25/09/2026):** H2.1 a H2.6 — **Marco M1 (Núcleo) atingido**.
+
+| Verificação | Resultado |
+|-------------|-----------|
+| Backend: ruff, mypy strict | ✔ |
+| Backend: pytest com Postgres real | ✔ 122 testes (56 novos): fornecedores, cadastros, lançamentos, filtros, paginação, versão, permissões, referências de outra empresa, teste de propriedade SQL × Python (Hypothesis), uso do índice com 20 mil linhas |
+| Web: vitest | ✔ 47 testes (20 novos): lista/abas/cursor, formulário (centavos, fornecedor, If-Match/412, cadastro inline), selos, formatação |
+| Contrato OpenAPI → tipos TS | ✔ geração determinística; CI falha se `openapi.json` ou `schema.d.ts` estiverem desatualizados |
+| Ponta a ponta contra a API em container | ✔ categorias padrão, CNPJ numérico/alfanumérico/inválido, busca sem acento, status derivado, ordem por vencimento, 412, visibilidade por perfil, isolamento entre empresas |
+
+Decisões tomadas durante a implementação:
+- **CNPJ alfanumérico** (IN RFB 2.229/2024, vigente desde jul/2026) suportado na validação, no banco (`CHECK ^[0-9A-Z]{12}[0-9]{2}$`) e na formatação.
+- **Validação de referências na API**: a checagem de FK do Postgres ignora RLS, então um usuário poderia apontar para um fornecedor/categoria de outra empresa conhecendo o UUID. O serviço confere cada ID sob RLS (e se está ativo) → `422`.
+- **Status efetivo calculado com "hoje" parametrizado** na listagem (relógio injetável), com teste de propriedade garantindo que SQL e Python sempre concordam; a view `v_lancamentos` continua existindo para relatórios.
+- **Visibilidade**: colaborador vê/edita só os próprios lançamentos; aprovador vê todos e não edita; admin vê e edita todos.
+- **Categorias usam `ativo`** (desativar) em vez de `deleted_at`, como projetos e centros de custo — item desativado some dos formulários mas continua nos lançamentos antigos.
+- **Índice de vencimento inclui `id`** (`tenant_id, data_pagamento_prevista, id`) para servir a ordenação estável da paginação por cursor.
+- **`If-Match` opcional** no PATCH (quando enviado e desatualizado → `412`); a tela sempre envia.
+- **Telas extras** de Fornecedores e Cadastros (admin), além das previstas, para gerir os dados pela interface.
+- **Tipos gerados sem `openapi-fetch`**: o frontend usa os tipos gerados com o `apiFetch` próprio, que já trata renovação de sessão e Problem Details.
+
+## 11. Retrospectiva
 _Preencher ao final da sprint._

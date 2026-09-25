@@ -1,7 +1,7 @@
 # Atalhos de desenvolvimento. Requer: docker, uv, pnpm.
 COMPOSE = docker compose --env-file .env -f infra/docker-compose.yml
 
-.PHONY: help up up-app down logs migrate seed api worker web test test-backend test-web lint fmt
+.PHONY: help up up-app down logs migrate seed gen-api api worker web test test-backend test-web lint fmt
 
 help: ## Lista os comandos
 	@grep -E '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  %-14s %s\n", $$1, $$2}'
@@ -32,6 +32,10 @@ worker: ## Worker Celery consumindo todas as filas
 
 web: ## Frontend em modo dev (http://localhost:5173)
 	pnpm --filter web dev
+
+gen-api: ## Regenera openapi.json e os tipos TypeScript do frontend
+	cd backend && uv run python -m app.cli openapi --out ../packages/api-client/openapi.json
+	pnpm --filter @financeiro/api-client gen
 
 test: test-backend test-web ## Todos os testes
 

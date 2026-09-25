@@ -2,7 +2,7 @@
 
 > Captura de comprovantes (boletos, recibos, notas fiscais) por scanner/câmera ou upload, extração automática via OCR, organização por faixa de valor e vencimento, controle de pagamento de boletos e geração de relatórios de prestação de contas — multiempresa, com isolamento por tenant.
 
-**Status:** Sprints [00](docs/sprints/sprint-00.md) (fundação) e [01](docs/sprints/sprint-01.md) (login e multiempresa) implementadas
+**Status:** Sprints [00](docs/sprints/sprint-00.md) (fundação), [01](docs/sprints/sprint-01.md) (login e multiempresa) e [02](docs/sprints/sprint-02.md) (fornecedores, cadastros e lançamentos) implementadas — Marco M1 atingido
 
 ---
 
@@ -175,6 +175,7 @@ Qualidade:
 
 ```bash
 make test     # pytest + vitest
+make gen-api  # após mudar a API: regenera openapi.json e os tipos do frontend
 make lint     # ruff, mypy, prettier, eslint, tsc
 make help     # todos os atalhos
 ```

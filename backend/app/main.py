@@ -25,7 +25,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
-        expose_headers=[REQUEST_ID_HEADER],
+        expose_headers=[REQUEST_ID_HEADER, "ETag"],
     )
     install_error_handlers(app)
     app.include_router(build_router(settings))

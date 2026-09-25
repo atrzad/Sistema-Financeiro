@@ -1,7 +1,15 @@
 {
   "name": "@financeiro/api-client",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "private": true,
-  "description": "Cliente TypeScript gerado a partir do OpenAPI da API (geração implementada na Sprint 02, H2.6).",
-  "scripts": {}
+  "type": "module",
+  "description": "Tipos TypeScript gerados do contrato OpenAPI da API. Não edite src/schema.d.ts à mão.",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "scripts": {
+    "gen": "openapi-typescript openapi.json -o src/schema.d.ts && prettier --write src/schema.d.ts"
+  },
+  "devDependencies": {
+    "openapi-typescript": "^7.13.0"
+  }
 }

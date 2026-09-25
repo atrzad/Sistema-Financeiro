@@ -6,3 +6,4 @@ backend
 docs
 *.md
 .obsidian
+packages/api-client/openapi.json

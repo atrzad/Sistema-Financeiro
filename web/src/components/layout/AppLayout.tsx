@@ -13,8 +13,10 @@ interface NavItem {
 const NAV: NavItem[] = [
   { to: '/', label: 'Início', end: true },
   { to: '/lancamentos', label: 'Lançamentos' },
+  { to: '/fornecedores', label: 'Fornecedores' },
   { to: '/upload', label: 'Enviar comprovantes' },
   { to: '/relatorios', label: 'Relatórios' },
+  { to: '/cadastros', label: 'Cadastros', roles: ['admin'] },
   { to: '/usuarios', label: 'Usuários', roles: ['admin'] },
 ]
 
