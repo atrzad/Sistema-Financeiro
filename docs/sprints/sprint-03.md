@@ -111,7 +111,7 @@ Arrastar 10 arquivos (incluindo um `.exe` renomeado para `.pdf` e um PDF de carn
 |-------------|-----------|
 | Backend: ruff, mypy strict | ✔ |
 | Backend: testes sem serviços externos | ✔ 79 testes (corpus malicioso, cache do lote, contrato "só JSON", worker) |
-| Backend: integração com Postgres + RustFS (`tests/api/test_uploads.py`) | ⏳ escritos, **não executados em 26/09** (Docker parado) — rodar `make up && make test-backend` |
+| Backend: integração com Postgres + RustFS (`tests/api/test_uploads.py`) | ✔ no CI ([PR #1](https://github.com/atrzad/Sistema-Financeiro/pull/1)): 183 testes, nenhum pulado — o job sobe o RustFS e `REQUIRE_SERVICES=1` faz a falta de serviço falhar |
 | Web: format, lint, typecheck, vitest | ✔ 73 testes (26 novos): regras, envio XHR, fila (concorrência, retry, link vencido, cancelamento, 422), Tela 1 |
 | Contrato OpenAPI → tipos TS | ✔ regenerados sem diferença |
 | Upload de 10 × 5 MB em < 30 s | ⏳ não medido |
