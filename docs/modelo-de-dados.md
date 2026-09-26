@@ -193,46 +193,59 @@ FROM lancamentos l
 WHERE l.deleted_at IS NULL;
 
 -- ========== Sprint 03 ==========
+-- Os agregados do lote (concluídos, com erro) são derivados dos comprovantes e servidos
+-- de um cache Redis (hash batch:{id}) atualizado por quem muda cada item — sem contador
+-- na tabela para manter em sincronia.
 CREATE TABLE upload_batches (
     id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id       UUID NOT NULL REFERENCES tenants(id),
+    tenant_id       UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
     usuario_id      UUID NOT NULL REFERENCES users(id),
     total_arquivos  INT NOT NULL CHECK (total_arquivos BETWEEN 1 AND 10),
-    tamanho_total   BIGINT NOT NULL CHECK (tamanho_total <= 62914560),  -- 60 MB
-    concluidos      INT NOT NULL DEFAULT 0,
-    com_erro        INT NOT NULL DEFAULT 0,
+    tamanho_total   BIGINT NOT NULL CHECK (tamanho_total BETWEEN 1 AND 62914560),  -- 60 MB
     origem          VARCHAR(10) NOT NULL DEFAULT 'web' CHECK (origem IN ('web','mobile')),
     created_at      TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+CREATE INDEX ix_batches_usuario ON upload_batches (tenant_id, usuario_id);
 
 CREATE TABLE comprovantes (
     id                    UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id             UUID NOT NULL REFERENCES tenants(id),
-    lancamento_id         UUID REFERENCES lancamentos(id),
+    tenant_id             UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    usuario_id            UUID NOT NULL REFERENCES users(id),  -- quem enviou
     upload_batch_id       UUID REFERENCES upload_batches(id),
-    storage_key           TEXT NOT NULL UNIQUE,
-    thumbnail_key         TEXT,
+    lancamento_id         UUID REFERENCES lancamentos(id),
+    storage_key           TEXT NOT NULL UNIQUE,  -- {tenant}/{aaaa}/{mm}/{id}.{ext}; quarentena/… se recusado
+    thumbnail_key         TEXT,                  -- thumbnails/…webp (sem EXIF)
     nome_original         VARCHAR(255) NOT NULL,
-    mime_type             VARCHAR(50)  NOT NULL
-        CHECK (mime_type IN ('application/pdf','image/jpeg','image/png','image/heic','image/webp')),
+    mime_type             VARCHAR(50)  NOT NULL  -- detectado pelos magic bytes, não pelo cliente
+        CHECK (mime_type IN ('application/pdf','image/jpeg','image/png')),
     extensao_original     VARCHAR(10)  NOT NULL,
-    tamanho_bytes         BIGINT NOT NULL CHECK (tamanho_bytes <= 10485760),  -- 10 MB
+    tamanho_bytes         BIGINT NOT NULL CHECK (tamanho_bytes BETWEEN 1 AND 10485760),  -- 10 MB
     sha256                CHAR(64),
+    possivel_duplicado    BOOLEAN NOT NULL DEFAULT false,  -- mesmo sha256 no tenant (não bloqueia)
     total_paginas         INT NOT NULL DEFAULT 1 CHECK (total_paginas >= 1),
-    status_processamento  VARCHAR(20) NOT NULL DEFAULT 'na_fila'
+    -- "na fila" é estado do navegador (antes do PUT); no banco o item nasce "enviando".
+    status_processamento  VARCHAR(20) NOT NULL DEFAULT 'enviando'
         CHECK (status_processamento IN
-        ('na_fila','enviando','validando','processando_ocr','aguardando_revisao','concluido','erro')),
-    tentativas_ocr        SMALLINT NOT NULL DEFAULT 0,
+        ('enviando','validando','processando_ocr','aguardando_revisao','concluido','erro')),
     erro_msg              TEXT,
+    imutavel              BOOLEAN NOT NULL DEFAULT false,  -- Object Lock aplicado ao original
+    tentativas_ocr        SMALLINT NOT NULL DEFAULT 0,
     ocr_provider          VARCHAR(30),
     ocr_raw_payload       JSONB,
     ocr_confidence        JSONB,          -- {"valor":0.97,"cnpj":0.62,...}
-    removido_em           TIMESTAMPTZ,    -- Sprint 11: arquivo apagado por retenção
+    -- removido_em        TIMESTAMPTZ     -- Sprint 11: arquivo apagado por retenção
     created_at            TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at            TIMESTAMPTZ NOT NULL DEFAULT now()
 );
-CREATE INDEX ix_comp_batch ON comprovantes (upload_batch_id);
-CREATE INDEX ix_comp_sha   ON comprovantes (tenant_id, sha256);   -- detecção de duplicidade
+CREATE INDEX ix_comp_batch  ON comprovantes (upload_batch_id);
+CREATE INDEX ix_comp_sha    ON comprovantes (tenant_id, sha256);   -- detecção de duplicidade
+CREATE INDEX ix_comp_status ON comprovantes (status_processamento, created_at);  -- rotina de abandonados
+
+-- Rotinas de manutenção percorrem as empresas e processam cada uma com o próprio
+-- tenant (SET LOCAL) — nunca com uma role que ignore o RLS.
+CREATE FUNCTION listar_tenants_ativos() RETURNS SETOF uuid
+    LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public, pg_temp
+    AS $$ SELECT id FROM tenants WHERE ativo ORDER BY created_at $$;
 
 -- ========== Sprint 05 ==========
 CREATE TABLE lancamento_itens (

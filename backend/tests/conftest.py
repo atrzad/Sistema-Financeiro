@@ -37,6 +37,11 @@ def _test_database(url: str) -> str:
 for _key in ("DATABASE_URL", "DATABASE_URL_OWNER"):
     os.environ[_key] = _test_database(os.environ[_key])
 
+# Bucket próprio dos testes: os arquivos validados ficam com retenção (Object Lock)
+# e não podem se misturar aos de desenvolvimento.
+os.environ["S3_BUCKET_COMPROVANTES"] = "comprovantes-test"
+os.environ.setdefault("S3_PUBLIC_ENDPOINT_URL", os.environ["S3_ENDPOINT_URL"])
+
 from collections.abc import Callable, Iterator  # noqa: E402
 
 import pytest  # noqa: E402
@@ -87,6 +92,7 @@ from app.core.security import hash_password  # noqa: E402
 from app.db.tenant import tenant_session  # noqa: E402
 from app.models import Tenant, User  # noqa: E402
 from app.services.auth_service import AuthService  # noqa: E402
+from app.services.lote_cache import LoteStatusCache, get_lote_cache  # noqa: E402
 from app.services.rate_limit import LoginRateLimiter  # noqa: E402
 
 SENHA = "Senha@123"
@@ -174,19 +180,35 @@ async def globex(clean_db: None) -> DemoTenant:
 
 
 @pytest.fixture
-def fake_redis() -> fakeredis.FakeAsyncRedis:
-    return fakeredis.FakeAsyncRedis(decode_responses=True)
+def redis_server() -> fakeredis.FakeServer:
+    return fakeredis.FakeServer()
+
+
+@pytest.fixture
+def fake_redis(redis_server: fakeredis.FakeServer) -> fakeredis.FakeAsyncRedis:
+    return fakeredis.FakeAsyncRedis(server=redis_server, decode_responses=True)
+
+
+@pytest.fixture
+def lote_cache(
+    redis_server: fakeredis.FakeServer, fake_redis: fakeredis.FakeAsyncRedis
+) -> LoteStatusCache:
+    """Cache de status de lote sobre o mesmo Redis falso (clientes síncrono e assíncrono)."""
+    return LoteStatusCache(
+        fakeredis.FakeRedis(server=redis_server, decode_responses=True), fake_redis
+    )
 
 
 @pytest.fixture
 async def api(
-    app: FastAPI, fake_redis: fakeredis.FakeAsyncRedis
+    app: FastAPI, fake_redis: fakeredis.FakeAsyncRedis, lote_cache: LoteStatusCache
 ) -> AsyncIterator[httpx.AsyncClient]:
     settings = get_settings()
     app.dependency_overrides[get_auth_service] = lambda: AuthService(
         settings,
         LoginRateLimiter(fake_redis, settings.login_max_failures, settings.login_failure_window_s),
     )
+    app.dependency_overrides[get_lote_cache] = lambda: lote_cache
     # https para que o cookie Secure de refresh seja armazenado pelo cliente
     async with httpx.AsyncClient(
         transport=httpx.ASGITransport(app=app), base_url="https://testserver"
@@ -205,3 +227,24 @@ async def login(client: httpx.AsyncClient, slug: str, email: str, senha: str = S
 
 def bearer(token: str) -> dict[str, str]:
     return {"Authorization": f"Bearer {token}"}
+
+
+# --- Storage real (upload) --------------------------------------------------------
+
+
+@pytest.fixture(scope="session")
+def storage_bucket() -> str:
+    """Garante o bucket de testes (com Object Lock); pula se o storage estiver fora."""
+    from botocore.exceptions import BotoCoreError, ClientError
+
+    from app.services.storage import get_s3_client
+
+    bucket = get_settings().s3_bucket_comprovantes
+    s3 = get_s3_client()
+    try:
+        s3.head_bucket(Bucket=bucket)
+    except ClientError:
+        s3.create_bucket(Bucket=bucket, ObjectLockEnabledForBucket=True)
+    except BotoCoreError as exc:
+        pytest.skip(f"Storage indisponível: {exc!r}")
+    return bucket

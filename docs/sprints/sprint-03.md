@@ -57,18 +57,18 @@ RF01 (web) · RF11 · RNF01 (parcial) · RNF02 · RNF07 · RNF08 · Tela 1
 ## 4. Tarefas técnicas
 
 **Dados**
-- [ ] Migração `0004_uploads`: `upload_batches`, `comprovantes` (com `storage_key`, `sha256`, `tamanho_bytes`, `nome_original`, status estendidos), RLS
+- [x] Migração `0004_uploads`: `upload_batches`, `comprovantes` (com `storage_key`, `sha256`, `tamanho_bytes`, `nome_original`, status estendidos), RLS
 
 **Backend**
-- [ ] `services/storage.py`: interface `ObjectStorage` (`presign_put`, `presign_get`, `get_stream`, `move`), implementação boto3 compatível com qualquer S3 (RustFS em dev, AWS S3 em produção)
-- [ ] `services/upload_validation.py`: três camadas como funções puras testáveis sobre `bytes`
-- [ ] `workers/tasks/validar_arquivo.py` (fila `validation`, timeout 60s)
-- [ ] Cache de status do lote em Redis (hash `batch:{id}`)
-- [ ] Configuração CORS do bucket de dev (RustFS) para `PUT` do frontend
+- [x] `services/storage.py`: interface `ObjectStorage` (`presign_put`, `presign_get`, `read`, `quarantine`, `lock`), implementação boto3 compatível com qualquer S3 (RustFS em dev, AWS S3 em produção)
+- [x] `domain/upload_validation.py`: três camadas como funções puras testáveis sobre `bytes`
+- [x] `workers/tasks/uploads.py` → `validar_arquivo` (fila `validation`, timeout 60s) e `recuperar_uploads_abandonados` (fila `maintenance`, a cada 10 min)
+- [x] Cache de status do lote em Redis (hash `batch:{id}`)
+- [x] Configuração CORS do bucket de dev (RustFS) para `PUT` do frontend
 
 **Frontend**
-- [ ] `features/upload/` — `UploadPage`, `useUploadQueue` (fila com concorrência 4, retry, cancelamento via `AbortController`)
-- [ ] Polling do status com TanStack Query (`refetchInterval: 2000` enquanto houver itens em andamento)
+- [x] `features/upload/` — `UploadPage`, fila `FilaUpload` + `useFilaUpload` (concorrência 4, retry, cancelamento via `AbortController`)
+- [x] Polling do status com TanStack Query (`refetchInterval: 2000` enquanto houver itens em andamento)
 
 ## 5. Contrato de API
 
@@ -88,8 +88,8 @@ RF01 (web) · RF11 · RNF01 (parcial) · RNF02 · RNF07 · RNF08 · Tela 1
 - Frontend: `useUploadQueue` (concorrência, retry, cancelamento) com MSW; E2E enviando 10 arquivos.
 
 ## 7. Definition of Done específica
-- [ ] Todo o corpus de fixtures maliciosas é rejeitado
-- [ ] Nenhum arquivo passa pela API (verificado: payload máximo de `/uploads/*` é JSON)
+- [x] Todo o corpus de fixtures maliciosas é rejeitado
+- [x] Nenhum arquivo passa pela API (verificado: payload máximo de `/uploads/*` é JSON)
 - [ ] Upload de 10 arquivos de 5 MB conclui em < 30 s em rede local
 
 ## 8. Riscos e mitigação
@@ -103,5 +103,39 @@ RF01 (web) · RF11 · RNF01 (parcial) · RNF02 · RNF07 · RNF08 · Tela 1
 ## 9. Entregável / demo
 Arrastar 10 arquivos (incluindo um `.exe` renomeado para `.pdf` e um PDF de carnê com 3 páginas): 9 concluem, o falso é rejeitado com mensagem clara, o carnê mostra `3 páginas`.
 
-## 10. Retrospectiva
+## 10. Andamento
+
+**Implementado (26/09/2026):** H3.1 a H3.6 — backend e Tela 1.
+
+| Verificação | Resultado |
+|-------------|-----------|
+| Backend: ruff, mypy strict | ✔ |
+| Backend: testes sem serviços externos | ✔ 79 testes (corpus malicioso, cache do lote, contrato "só JSON", worker) |
+| Backend: integração com Postgres + RustFS (`tests/api/test_uploads.py`) | ⏳ escritos, **não executados em 26/09** (Docker parado) — rodar `make up && make test-backend` |
+| Web: format, lint, typecheck, vitest | ✔ 73 testes (26 novos): regras, envio XHR, fila (concorrência, retry, link vencido, cancelamento, 422), Tela 1 |
+| Contrato OpenAPI → tipos TS | ✔ regenerados sem diferença |
+| Upload de 10 × 5 MB em < 30 s | ⏳ não medido |
+| Demo (seção 9) | ⏳ pendente |
+
+Corpus malicioso recusado: extensão fora da lista, `.exe`/zip/HTML/SVG renomeados, PNG ↔ PDF trocados, arquivo vazio, PDF truncado, com JavaScript, com `/OpenAction`, criptografado, com mais de 50 páginas, JPEG truncado, bomba PNG (64 MP), **bomba PDF** (stream que expande para 100 MB), **poliglotas** JPEG+PDF e PNG com PDF anexado.
+
+Decisões tomadas durante a implementação:
+- **URL assinada fixa `Content-Type` e `Content-Length`**: arquivo maior ou de outro tipo que o declarado recebe `403` do próprio storage; a confirmação ainda compara o tamanho com um `HEAD`.
+- **Dois endereços de storage** (`S3_ENDPOINT_URL` para a API/worker, `S3_PUBLIC_ENDPOINT_URL` para assinar as URLs do navegador): em Docker a API fala com `storage:9000`, o navegador com `localhost:9000`.
+- **Commit antes da resposta**: a dependência `DB` passou a `scope="function"` — no escopo padrão o FastAPI respondia `201` antes do commit.
+- **Enfileirar só depois do commit** (`db/hooks.on_commit`): o worker nunca busca uma linha que ainda não existe; rollback descarta a task.
+- **Cache do lote no Redis** (hash `batch:{id}`) gravado por quem muda cada item, após o commit; leitura incompleta vai ao banco e completa o cache com `HSETNX` (um retrato velho nunca sobrescreve o estado mais novo). Redis fora do ar → tudo segue pelo banco.
+- **Object Lock `GOVERNANCE`** no original validado, pela retenção da empresa (`retencao_meses`); bucket próprio nos testes (`comprovantes-test`).
+- **Rotinas de manutenção respeitam o RLS**: percorrem as empresas via `listar_tenants_ativos()` (`SECURITY DEFINER`) e processam cada uma no próprio tenant.
+- **Validação "fail closed"**: qualquer falha do leitor de PDF/imagem diante de entrada hostil recusa o arquivo. Encontrado na revisão: o `pypdf` já limita a descompressão, mas a exceção dele (`LimitReachedError`) não era tratada e deixava o comprovante em `validando` para sempre.
+- **Poliglotas**: imagem com cabeçalho de PDF embutido é recusada. Outros dados após o fim da imagem são aceitos (celulares anexam vídeo às fotos com movimento).
+- **Nenhum comprovante fica sem resposta**: tentativas esgotadas → `erro` com mensagem ("Não foi possível validar o arquivo agora…"); validação parada há mais de 30 min → `erro` pela rotina de manutenção (sem reenfileirar, para um arquivo que derruba o worker não entrar em ciclo); falha só na miniatura não reprova o arquivo.
+- **Workers com `NullPool`**: cada task roda num event loop novo e conexões asyncpg não atravessam loops.
+- **Fila de envio acima das rotas** (`UploadProvider` no layout): dá para navegar pelo sistema enquanto os arquivos sobem; o menu mostra o progresso e o navegador pede confirmação ao fechar a aba com envio em curso.
+- **Botões da Tela 1**: *Continuar* inicia o envio; durante o envio, *Cancelar tudo* interrompe o que ainda não subiu; ao final, *Enviar mais comprovantes* recomeça. Na Sprint 04, *Continuar* passa a levar à Tela 2 (processamento).
+- **Link de envio renovado automaticamente** se o arquivo esperou mais de 10 min na fila (a URL vale 15 min). "Tentar novamente" sempre pede um link novo; se o servidor responde que já recebeu o arquivo (`409`), o item segue como enviado.
+- **Itens cancelados** continuam `enviando` no servidor até a rotina de manutenção marcá-los como erro (30 min) — não há rota de exclusão nesta sprint.
+- **Testes do frontend sem MSW**: seguem o padrão do projeto (mock de `fetch` + dependências injetadas na fila, e um `XMLHttpRequest` falso para o envio).
+
+## 11. Retrospectiva
 _Preencher ao final da sprint._

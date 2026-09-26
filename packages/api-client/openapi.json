@@ -1452,10 +1452,326 @@
           }
         }
       }
+    },
+    "/api/v1/uploads/batch": {
+      "post": {
+        "tags": [
+          "upload de comprovantes"
+        ],
+        "summary": "Criar Lote",
+        "description": "Cria o lote e devolve uma URL de upload por arquivo (PUT direto no storage).\n\nA URL fixa tipo e tamanho declarados: um arquivo diferente é recusado pelo storage.",
+        "operationId": "criar_lote_api_v1_uploads_batch_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NovoLote"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoteCriado"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/uploads/{comprovante_id}/complete": {
+      "post": {
+        "tags": [
+          "upload de comprovantes"
+        ],
+        "summary": "Confirmar",
+        "description": "Confirma o envio e dispara a validação em segundo plano. Idempotente.",
+        "operationId": "confirmar_api_v1_uploads__comprovante_id__complete_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "comprovante_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Comprovante Id"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Confirmacao"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/uploads/{comprovante_id}/retry-url": {
+      "post": {
+        "tags": [
+          "upload de comprovantes"
+        ],
+        "summary": "Nova Url",
+        "description": "Nova URL para reenviar um arquivo cujo upload falhou ou expirou.",
+        "operationId": "nova_url_api_v1_uploads__comprovante_id__retry_url_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "comprovante_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Comprovante Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UploadInstrucao"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/uploads/batch/{batch_id}/status": {
+      "get": {
+        "tags": [
+          "upload de comprovantes"
+        ],
+        "summary": "Status Lote",
+        "description": "Status item a item + agregados. Pensado para polling (servido do cache).",
+        "operationId": "status_lote_api_v1_uploads_batch__batch_id__status_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "batch_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Batch Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoteStatus"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/comprovantes/{comprovante_id}/arquivo": {
+      "get": {
+        "tags": [
+          "upload de comprovantes"
+        ],
+        "summary": "Baixar Arquivo",
+        "description": "Redireciona para o original (link temporário, sempre como download).",
+        "operationId": "baixar_arquivo_api_v1_comprovantes__comprovante_id__arquivo_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "comprovante_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Comprovante Id"
+            }
+          }
+        ],
+        "responses": {
+          "302": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/comprovantes/{comprovante_id}/thumbnail": {
+      "get": {
+        "tags": [
+          "upload de comprovantes"
+        ],
+        "summary": "Miniatura",
+        "operationId": "miniatura_api_v1_comprovantes__comprovante_id__thumbnail_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "comprovante_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Comprovante Id"
+            }
+          }
+        ],
+        "responses": {
+          "302": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
     "schemas": {
+      "ArquivoDeclarado": {
+        "properties": {
+          "nome": {
+            "type": "string",
+            "maxLength": 255,
+            "minLength": 1,
+            "title": "Nome",
+            "examples": [
+              "boleto_luz.pdf"
+            ]
+          },
+          "tamanho_bytes": {
+            "type": "integer",
+            "exclusiveMinimum": 0.0,
+            "title": "Tamanho Bytes",
+            "examples": [
+              184320
+            ]
+          },
+          "mime_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mime Type",
+            "description": "Informativo: o tipo real é detectado pelo servidor"
+          }
+        },
+        "type": "object",
+        "required": [
+          "nome",
+          "tamanho_bytes"
+        ],
+        "title": "ArquivoDeclarado"
+      },
       "CategoriaIn": {
         "properties": {
           "nome": {
@@ -1677,6 +1993,27 @@
         ],
         "title": "ComponentHealth"
       },
+      "Confirmacao": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "enviando",
+              "validando",
+              "processando_ocr",
+              "aguardando_revisao",
+              "concluido",
+              "erro"
+            ],
+            "title": "Status"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status"
+        ],
+        "title": "Confirmacao"
+      },
       "HTTPValidationError": {
         "properties": {
           "detail": {
@@ -1714,6 +2051,75 @@
           "components"
         ],
         "title": "HealthReport"
+      },
+      "ItemStatus": {
+        "properties": {
+          "comprovante_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Comprovante Id"
+          },
+          "nome": {
+            "type": "string",
+            "title": "Nome"
+          },
+          "tamanho_bytes": {
+            "type": "integer",
+            "title": "Tamanho Bytes"
+          },
+          "mime_type": {
+            "type": "string",
+            "title": "Mime Type"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "enviando",
+              "validando",
+              "processando_ocr",
+              "aguardando_revisao",
+              "concluido",
+              "erro"
+            ],
+            "title": "Status"
+          },
+          "erro_msg": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Erro Msg"
+          },
+          "total_paginas": {
+            "type": "integer",
+            "title": "Total Paginas"
+          },
+          "possivel_duplicado": {
+            "type": "boolean",
+            "title": "Possivel Duplicado"
+          },
+          "tem_miniatura": {
+            "type": "boolean",
+            "title": "Tem Miniatura"
+          }
+        },
+        "type": "object",
+        "required": [
+          "comprovante_id",
+          "nome",
+          "tamanho_bytes",
+          "mime_type",
+          "status",
+          "erro_msg",
+          "total_paginas",
+          "possivel_duplicado",
+          "tem_miniatura"
+        ],
+        "title": "ItemStatus"
       },
       "LancamentoIn": {
         "properties": {
@@ -2244,6 +2650,76 @@
         ],
         "title": "LoginRequest"
       },
+      "LoteCriado": {
+        "properties": {
+          "batch_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Batch Id"
+          },
+          "expira_em": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Expira Em"
+          },
+          "itens": {
+            "items": {
+              "$ref": "#/components/schemas/UploadInstrucao"
+            },
+            "type": "array",
+            "title": "Itens"
+          }
+        },
+        "type": "object",
+        "required": [
+          "batch_id",
+          "expira_em",
+          "itens"
+        ],
+        "title": "LoteCriado"
+      },
+      "LoteStatus": {
+        "properties": {
+          "batch_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Batch Id"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "concluidos": {
+            "type": "integer",
+            "title": "Concluidos"
+          },
+          "com_erro": {
+            "type": "integer",
+            "title": "Com Erro"
+          },
+          "em_andamento": {
+            "type": "integer",
+            "title": "Em Andamento"
+          },
+          "itens": {
+            "items": {
+              "$ref": "#/components/schemas/ItemStatus"
+            },
+            "type": "array",
+            "title": "Itens"
+          }
+        },
+        "type": "object",
+        "required": [
+          "batch_id",
+          "total",
+          "concluidos",
+          "com_erro",
+          "em_andamento",
+          "itens"
+        ],
+        "title": "LoteStatus"
+      },
       "Me": {
         "properties": {
           "id": {
@@ -2286,6 +2762,32 @@
           "tenant"
         ],
         "title": "Me"
+      },
+      "NovoLote": {
+        "properties": {
+          "arquivos": {
+            "items": {
+              "$ref": "#/components/schemas/ArquivoDeclarado"
+            },
+            "type": "array",
+            "minItems": 1,
+            "title": "Arquivos"
+          },
+          "origem": {
+            "type": "string",
+            "enum": [
+              "web",
+              "mobile"
+            ],
+            "title": "Origem",
+            "default": "web"
+          }
+        },
+        "type": "object",
+        "required": [
+          "arquivos"
+        ],
+        "title": "NovoLote"
       },
       "ProjetoIn": {
         "properties": {
@@ -2623,6 +3125,38 @@
           "user"
         ],
         "title": "TokenResponse"
+      },
+      "UploadInstrucao": {
+        "properties": {
+          "comprovante_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Comprovante Id"
+          },
+          "nome": {
+            "type": "string",
+            "title": "Nome"
+          },
+          "upload_url": {
+            "type": "string",
+            "title": "Upload Url"
+          },
+          "headers": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object",
+            "title": "Headers"
+          }
+        },
+        "type": "object",
+        "required": [
+          "comprovante_id",
+          "nome",
+          "upload_url",
+          "headers"
+        ],
+        "title": "UploadInstrucao"
       },
       "UserCreate": {
         "properties": {

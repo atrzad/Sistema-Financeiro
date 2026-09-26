@@ -51,7 +51,11 @@ async def get_db(user: CurrentUser) -> AsyncIterator[AsyncSession]:
         yield session
 
 
-DB = Annotated[AsyncSession, Depends(get_db)]
+# scope="function": o commit acontece ANTES da resposta ser enviada. No escopo padrão
+# ("request") o FastAPI envia a resposta e só depois fecha a dependência — o cliente
+# receberia 201 de algo ainda não gravado (ou que falhou no commit) e a próxima
+# requisição poderia não enxergar o dado.
+DB = Annotated[AsyncSession, Depends(get_db, scope="function")]
 
 
 def require_role(*roles: Role) -> Callable[[AccessClaims], Awaitable[AccessClaims]]:

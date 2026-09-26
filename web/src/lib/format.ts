@@ -36,3 +36,12 @@ export function formatCNPJ(cnpj: string | null | undefined): string {
   if (!cnpj || cnpj.length !== 14) return cnpj ?? ''
   return `${cnpj.slice(0, 2)}.${cnpj.slice(2, 5)}.${cnpj.slice(5, 8)}/${cnpj.slice(8, 12)}-${cnpj.slice(12)}`
 }
+
+const umaCasa = new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 1 })
+
+/** Tamanho de arquivo: 900 → "900 B", 184320 → "180 KB", 5452595 → "5,2 MB". */
+export function formatBytes(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`
+  if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`
+  return `${umaCasa.format(bytes / (1024 * 1024))} MB`
+}

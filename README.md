@@ -2,7 +2,7 @@
 
 > Captura de comprovantes (boletos, recibos, notas fiscais) por scanner/câmera ou upload, extração automática via OCR, organização por faixa de valor e vencimento, controle de pagamento de boletos e geração de relatórios de prestação de contas — multiempresa, com isolamento por tenant.
 
-**Status:** Sprints [00](docs/sprints/sprint-00.md) (fundação), [01](docs/sprints/sprint-01.md) (login e multiempresa) e [02](docs/sprints/sprint-02.md) (fornecedores, cadastros e lançamentos) implementadas — Marco M1 atingido
+**Status:** Sprints [00](docs/sprints/sprint-00.md) (fundação), [01](docs/sprints/sprint-01.md) (login e multiempresa) e [02](docs/sprints/sprint-02.md) (fornecedores, cadastros e lançamentos) implementadas — Marco M1 atingido. Sprint [03](docs/sprints/sprint-03.md) (upload em lote) implementada, em validação ponta a ponta
 
 ---
 
