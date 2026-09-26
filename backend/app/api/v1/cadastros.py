@@ -1,4 +1,4 @@
-"""Categorias, projetos e centros de custo: todos listam; só admin altera."""
+"""Categorias, projetos, centros de custo e tags: todos listam; só admin altera."""
 
 import uuid
 from typing import Annotated, Any
@@ -8,7 +8,7 @@ from pydantic import BaseModel
 
 from app.api.deps import DB, CurrentUser, require_role
 from app.core.security import AccessClaims
-from app.models import Categoria, CentroCusto, Projeto
+from app.models import Categoria, CentroCusto, Projeto, Tag
 from app.schemas.cadastros import (
     CategoriaIn,
     CategoriaOut,
@@ -19,6 +19,9 @@ from app.schemas.cadastros import (
     ProjetoIn,
     ProjetoOut,
     ProjetoUpdate,
+    TagIn,
+    TagOut,
+    TagUpdate,
 )
 from app.services import cadastros_service
 
@@ -63,3 +66,4 @@ centros_custo = _router(
     CentroCustoUpdate,
     CentroCustoOut,
 )
+tags = _router("/tags", "tags", Tag, TagIn, TagUpdate, TagOut)

@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime
 
-from sqlalchemy import ForeignKey, String, text
+from sqlalchemy import Column, ForeignKey, String, Table, text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.models.base import Base
@@ -54,3 +54,31 @@ class CentroCusto(Base):
     codigo: Mapped[str] = mapped_column(String(30))
     nome: Mapped[str] = mapped_column(String(150))
     ativo: Mapped[bool] = mapped_column(server_default=text("true"))
+
+
+class Tag(Base):
+    """Tipo de conta (recorrente, folha de pagamento...). Um lançamento pode ter várias."""
+
+    __tablename__ = "tags"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        primary_key=True, server_default=text("gen_random_uuid()")
+    )
+    tenant_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("tenants.id"))
+    nome: Mapped[str] = mapped_column(String(50))
+    ativo: Mapped[bool] = mapped_column(server_default=text("true"))
+
+
+# tenant_id é preenchido pelo banco a partir da sessão (app_current_tenant()).
+lancamento_tags = Table(
+    "lancamento_tags",
+    Base.metadata,
+    Column(
+        "tenant_id",
+        ForeignKey("tenants.id"),
+        nullable=False,
+        server_default=text("app_current_tenant()"),
+    ),
+    Column("lancamento_id", ForeignKey("lancamentos.id"), primary_key=True),
+    Column("tag_id", ForeignKey("tags.id"), primary_key=True),
+)

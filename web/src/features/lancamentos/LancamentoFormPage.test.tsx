@@ -9,6 +9,34 @@ import { mockApi } from '../../test/fetch'
 import { LancamentoFormPage } from './LancamentoFormPage'
 
 const CATS = [{ id: 'cat-1', nome: 'Utilidades', ativo: true }]
+const TAGS = [
+  { id: 't-rec', nome: 'Recorrente', ativo: true },
+  { id: 't-con', nome: 'Concessionárias', ativo: true },
+]
+
+const LANC = {
+  id: 'l-1',
+  valor: '100.00',
+  data_emissao: '2026-09-01',
+  data_pagamento_prevista: '2026-09-30',
+  data_pagamento_efetiva: null,
+  supplier: null,
+  categoria: null,
+  projeto: null,
+  centro_custo: null,
+  tags: [] as { id: string; nome: string }[],
+  usuario: { id: 'u-1', nome: 'Ana Admin' },
+  descricao: 'Aluguel',
+  forma_pagamento: null,
+  linha_digitavel: null,
+  status: 'pendente',
+  status_efetivo: 'pendente',
+  dias_para_vencimento: 5,
+  status_aprovacao: 'rascunho',
+  version: 3,
+  created_at: '',
+  updated_at: '',
+}
 
 function renderForm(path: string) {
   const router = createMemoryRouter(
@@ -32,6 +60,7 @@ function renderForm(path: string) {
 
 function cadastros(url: URL) {
   if (url.pathname === '/api/v1/categorias') return { body: CATS }
+  if (url.pathname === '/api/v1/tags') return { body: TAGS }
   if (url.pathname === '/api/v1/projetos' || url.pathname === '/api/v1/centros-custo')
     return { body: [] }
   if (url.pathname === '/api/v1/suppliers')
@@ -78,28 +107,7 @@ describe('LancamentoFormPage', () => {
   })
 
   it('edição envia If-Match e trata conflito de versão (412)', async () => {
-    const lanc = {
-      id: 'l-1',
-      valor: '100.00',
-      data_emissao: '2026-09-01',
-      data_pagamento_prevista: '2026-09-30',
-      data_pagamento_efetiva: null,
-      supplier: null,
-      categoria: null,
-      projeto: null,
-      centro_custo: null,
-      usuario: { id: 'u-1', nome: 'Ana Admin' },
-      descricao: 'Aluguel',
-      forma_pagamento: null,
-      linha_digitavel: null,
-      status: 'pendente',
-      status_efetivo: 'pendente',
-      dias_para_vencimento: 5,
-      status_aprovacao: 'rascunho',
-      version: 3,
-      created_at: '',
-      updated_at: '',
-    }
+    const lanc = LANC
     const calls = mockApi((url, init) => {
       if (url.pathname === '/api/v1/lancamentos/l-1' && init.method === 'PATCH')
         return {
@@ -140,5 +148,69 @@ describe('LancamentoFormPage', () => {
       nome_fantasia: 'Mercado Bom',
       cnpj: null,
     })
+  })
+
+  it('marca e desmarca várias tags ao criar', async () => {
+    const calls = mockApi((url, init) => {
+      if (init.method === 'POST' && url.pathname === '/api/v1/lancamentos')
+        return { status: 201, body: { id: 'novo' } }
+      return cadastros(url)
+    })
+    const router = renderForm('/lancamentos/novo')
+    const user = userEvent.setup()
+
+    await user.type(screen.getByPlaceholderText('R$ 0,00'), '10000')
+    const recorrente = await screen.findByRole('checkbox', { name: 'Recorrente' })
+    await user.click(recorrente)
+    await user.click(screen.getByRole('checkbox', { name: 'Concessionárias' }))
+    await user.click(recorrente) // desmarca
+    expect(recorrente).not.toBeChecked()
+    await user.click(recorrente) // marca de novo
+    await user.click(screen.getByRole('button', { name: 'Salvar' }))
+
+    await waitFor(() => expect(router.state.location.pathname).toBe('/lancamentos'))
+    expect(calls.find((c) => c.method === 'POST')!.body).toMatchObject({
+      tag_ids: ['t-con', 't-rec'],
+    })
+  })
+
+  it('na edição, mostra a tag desativada que o lançamento já tinha e permite trocar', async () => {
+    const lanc = { ...LANC, tags: [{ id: 't-old', nome: 'Antiga' }] }
+    const calls = mockApi((url) => {
+      if (url.pathname === '/api/v1/lancamentos/l-1') return { body: lanc }
+      return cadastros(url)
+    })
+    const router = renderForm('/lancamentos/l-1')
+    const user = userEvent.setup()
+
+    const antiga = await screen.findByRole('checkbox', {
+      name: 'Antiga (desativada)',
+      checked: true,
+    })
+    expect(screen.getByRole('checkbox', { name: 'Recorrente' })).not.toBeChecked()
+    await user.click(antiga)
+    await user.click(screen.getByRole('checkbox', { name: 'Recorrente' }))
+    await user.click(screen.getByRole('button', { name: 'Salvar' }))
+
+    await waitFor(() => expect(router.state.location.pathname).toBe('/lancamentos'))
+    expect(calls.find((c) => c.method === 'PATCH')!.body).toMatchObject({ tag_ids: ['t-rec'] })
+  })
+
+  it('sem a lista de tags, envia as tags atuais sem mexer nelas', async () => {
+    const lanc = { ...LANC, tags: [{ id: 't-rec', nome: 'Recorrente' }] }
+    const calls = mockApi((url) => {
+      if (url.pathname === '/api/v1/tags') return { status: 500, body: { detail: 'falhou' } }
+      if (url.pathname === '/api/v1/lancamentos/l-1') return { body: lanc }
+      return cadastros(url)
+    })
+    const router = renderForm('/lancamentos/l-1')
+    const user = userEvent.setup()
+
+    expect(await screen.findByDisplayValue('Aluguel')).toBeInTheDocument()
+    expect(screen.queryByRole('group', { name: 'Tags' })).not.toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Salvar' }))
+
+    await waitFor(() => expect(router.state.location.pathname).toBe('/lancamentos'))
+    expect(calls.find((c) => c.method === 'PATCH')!.body).toMatchObject({ tag_ids: ['t-rec'] })
   })
 })

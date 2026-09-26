@@ -11,10 +11,12 @@ import {
   type FormaPagamento,
   type LancamentoOut,
   type SupplierRef,
+  type TagOut,
 } from '../../lib/types'
 import { useAuth } from '../auth/AuthContext'
 import { useCadastro } from '../cadastros/useCadastros'
 import { SupplierAutocomplete } from '../fornecedores/SupplierAutocomplete'
+import { TagSelector } from '../tags/Tags'
 import { UrgencyBadge } from './UrgencyBadge'
 import { useExcluirLancamento, useLancamento, useSalvarLancamento } from './useLancamentos'
 
@@ -37,6 +39,7 @@ const schema = z.object({
   categoria_id: opcional,
   projeto_id: opcional,
   centro_custo_id: opcional,
+  tag_ids: z.array(z.string()),
 })
 
 type FormInput = z.input<typeof schema>
@@ -59,6 +62,7 @@ function valoresDe(l?: LancamentoOut): FormInput {
     categoria_id: l?.categoria?.id ?? '',
     projeto_id: l?.projeto?.id ?? '',
     centro_custo_id: l?.centro_custo?.id ?? '',
+    tag_ids: l?.tags.map((t) => t.id) ?? [],
   }
 }
 
@@ -80,6 +84,7 @@ export function LancamentoFormPage() {
   const categorias = useCadastro('categorias')
   const projetos = useCadastro('projetos')
   const centros = useCadastro('centros-custo')
+  const tags = useCadastro('tags')
   const [erro, setErro] = useState<{ texto: string; conflito: boolean } | null>(null)
 
   const {
@@ -99,6 +104,15 @@ export function LancamentoFormPage() {
 
   const formaPagamento = useWatch({ control, name: 'forma_pagamento' })
   const lanc = existente.data
+  // Ativas + as desativadas que este lançamento já tinha (continuam marcadas).
+  const opcoesTags: TagOut[] | undefined =
+    tags.data &&
+    [
+      ...tags.data,
+      ...(lanc?.tags ?? [])
+        .filter((t) => !tags.data.some((a) => a.id === t.id))
+        .map((t) => ({ ...t, ativo: false })),
+    ].sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'))
   const somenteLeitura = !!lanc && user?.role !== 'admin' && lanc.usuario.id !== user?.id
   const pago = lanc?.status === 'pago'
 
@@ -264,6 +278,16 @@ export function LancamentoFormPage() {
                 ))}
               </select>
             </label>
+
+            {opcoesTags && (
+              <Controller
+                control={control}
+                name="tag_ids"
+                render={({ field }) => (
+                  <TagSelector opcoes={opcoesTags} value={field.value} onChange={field.onChange} />
+                )}
+              />
+            )}
           </div>
         </fieldset>
 

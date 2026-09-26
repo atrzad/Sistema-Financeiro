@@ -12,8 +12,17 @@ interface Item {
 
 const TITULOS: Record<TipoCadastro, string> = {
   categorias: 'Categorias',
+  tags: 'Tags (tipo de conta)',
   projetos: 'Projetos',
   'centros-custo': 'Centros de custo',
+}
+
+// Mesmos limites do backend (schemas/cadastros.py).
+const MAX_NOME: Record<TipoCadastro, number> = {
+  categorias: 100,
+  tags: 50,
+  projetos: 150,
+  'centros-custo': 150,
 }
 
 function Lista({ tipo }: { tipo: TipoCadastro }) {
@@ -73,6 +82,7 @@ function Lista({ tipo }: { tipo: TipoCadastro }) {
         <input
           aria-label={`Novo item em ${TITULOS[tipo]}`}
           placeholder="Nome"
+          maxLength={MAX_NOME[tipo]}
           value={nome}
           onChange={(e) => setNome(e.target.value)}
         />
@@ -94,6 +104,7 @@ export function CadastrosPage() {
       </p>
       <div className="cadastros-grid">
         <Lista tipo="categorias" />
+        <Lista tipo="tags" />
         <Lista tipo="projetos" />
         <Lista tipo="centros-custo" />
       </div>

@@ -278,6 +278,41 @@ export interface paths {
     patch: operations['atualizar_api_v1_centros_custo__obj_id__patch']
     trace?: never
   }
+  '/api/v1/tags': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** Listar */
+    get: operations['listar_api_v1_tags_get']
+    put?: never
+    /** Criar */
+    post: operations['criar_api_v1_tags_post']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/v1/tags/{obj_id}': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    /** Atualizar */
+    patch: operations['atualizar_api_v1_tags__obj_id__patch']
+    trace?: never
+  }
   '/api/v1/lancamentos': {
     parameters: {
       query?: never
@@ -614,6 +649,8 @@ export interface components {
         ('boleto' | 'pix' | 'cartao' | 'dinheiro' | 'transferencia' | 'outro') | null
       /** Linha Digitavel */
       linha_digitavel?: string | null
+      /** Tag Ids */
+      tag_ids?: string[]
     }
     /** LancamentoOut */
     LancamentoOut: {
@@ -637,6 +674,8 @@ export interface components {
       categoria: components['schemas']['Ref'] | null
       projeto: components['schemas']['Ref'] | null
       centro_custo: components['schemas']['CentroCustoRef'] | null
+      /** Tags */
+      tags: components['schemas']['Ref'][]
       usuario: components['schemas']['Ref']
       /** Descricao */
       descricao: string | null
@@ -697,6 +736,8 @@ export interface components {
         ('boleto' | 'pix' | 'cartao' | 'dinheiro' | 'transferencia' | 'outro') | null
       /** Linha Digitavel */
       linha_digitavel?: string | null
+      /** Tag Ids */
+      tag_ids?: string[] | null
     }
     /** LoginRequest */
     LoginRequest: {
@@ -875,6 +916,30 @@ export interface components {
       razao_social?: string | null
       /** Cnpj */
       cnpj?: string | null
+    }
+    /** TagIn */
+    TagIn: {
+      /** Nome */
+      nome: string
+    }
+    /** TagOut */
+    TagOut: {
+      /**
+       * Id
+       * Format: uuid
+       */
+      id: string
+      /** Nome */
+      nome: string
+      /** Ativo */
+      ativo: boolean
+    }
+    /** TagUpdate */
+    TagUpdate: {
+      /** Nome */
+      nome?: string | null
+      /** Ativo */
+      ativo?: boolean | null
     }
     /** TenantInfo */
     TenantInfo: {
@@ -1693,6 +1758,106 @@ export interface operations {
       }
     }
   }
+  listar_api_v1_tags_get: {
+    parameters: {
+      query?: {
+        /** @description Inclui registros desativados */
+        incluir_inativos?: boolean
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['TagOut'][]
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  criar_api_v1_tags_post: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['TagIn']
+      }
+    }
+    responses: {
+      /** @description Successful Response */
+      201: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['TagOut']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  atualizar_api_v1_tags__obj_id__patch: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        obj_id: string
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['TagUpdate']
+      }
+    }
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['TagOut']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
   listar_api_v1_lancamentos_get: {
     parameters: {
       query?: {
@@ -1702,6 +1867,8 @@ export interface operations {
         categoria_id?: string | null
         projeto_id?: string | null
         centro_custo_id?: string | null
+        /** @description Tag (repita para exigir várias ao mesmo tempo) */
+        tag_id?: string[] | null
         vencimento_de?: string | null
         vencimento_ate?: string | null
         limit?: number

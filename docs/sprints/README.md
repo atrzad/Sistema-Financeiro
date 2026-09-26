@@ -68,6 +68,7 @@ A Sprint 10 (mobile) depende só da API de upload/OCR; pode ser antecipada para 
 | RF10 | Multiempresa com isolamento por tenant | 01 |
 | RF11 | Upload de PDF multi-página e JPG/PNG | 03, 04 |
 | RF12 | Exportação das tabelas do sistema para planilha (XLSX/CSV) | 07 (motor + listas), 08 (auditoria, aprovações), 09 (assíncrona > 10.000 linhas) |
+| RF13 | Tags por tipo de conta, várias por lançamento, com filtro na listagem | extra (pedido em 26/09, migração 0005); agrupar/exportar por tag pode entrar em 06 e 09 |
 
 ### Requisitos não funcionais
 

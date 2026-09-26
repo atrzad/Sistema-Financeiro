@@ -1,6 +1,8 @@
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 
 import { formatBRL, formatDate } from '../../lib/format'
+import { useCadastro } from '../cadastros/useCadastros'
+import { TagChips } from '../tags/Tags'
 import { ABAS, useLancamentos, type Aba } from './useLancamentos'
 import { UrgencyBadge } from './UrgencyBadge'
 
@@ -11,10 +13,27 @@ function abaDaUrl(valor: string | null): Aba {
 export function LancamentosPage() {
   const [params, setParams] = useSearchParams()
   const aba = abaDaUrl(params.get('aba'))
+  const tagIds = params.getAll('tag')
   const navigate = useNavigate()
-  const { data, error, isPending, fetchNextPage, hasNextPage, isFetchingNextPage } =
-    useLancamentos(aba)
+  const tags = useCadastro('tags')
+  const { data, error, isPending, fetchNextPage, hasNextPage, isFetchingNextPage } = useLancamentos(
+    aba,
+    tagIds,
+  )
   const itens = data?.pages.flatMap((p) => p.items) ?? []
+
+  // Muda um filtro na URL preservando os demais (aba e tags).
+  const mudarFiltros = (mudar: (p: URLSearchParams) => void) => {
+    const novos = new URLSearchParams(params)
+    mudar(novos)
+    setParams(novos)
+  }
+  const alternarTag = (id: string) =>
+    mudarFiltros((p) => {
+      p.delete('tag')
+      const proximas = tagIds.includes(id) ? tagIds.filter((t) => t !== id) : [...tagIds, id]
+      proximas.forEach((t) => p.append('tag', t))
+    })
 
   return (
     <>
@@ -33,19 +52,61 @@ export function LancamentosPage() {
             type="button"
             aria-selected={a.id === aba}
             className={a.id === aba ? 'tab ativo' : 'tab'}
-            onClick={() => setParams(a.id === 'todos' ? {} : { aba: a.id })}
+            onClick={() =>
+              mudarFiltros((p) => (a.id === 'todos' ? p.delete('aba') : p.set('aba', a.id)))
+            }
           >
             {a.label}
           </button>
         ))}
       </div>
 
+      {/* Com filtro ativo a linha sempre aparece: sem a lista de tags (erro, tag
+          desativada), "Limpar tags" ainda precisa estar ao alcance. */}
+      {((tags.data?.length ?? 0) > 0 || tagIds.length > 0) && (
+        <div className="filtro-tags" role="group" aria-label="Filtrar por tag">
+          <span className="rotulo" aria-hidden="true">
+            Tags:
+          </span>
+          {tags.data?.map((t) => {
+            const ativa = tagIds.includes(t.id)
+            return (
+              <button
+                key={t.id}
+                type="button"
+                className={ativa ? 'chip chip-marcado' : 'chip'}
+                aria-pressed={ativa}
+                onClick={() => alternarTag(t.id)}
+              >
+                <span aria-hidden="true">{ativa ? '✓' : '+'}</span>
+                {t.nome}
+              </button>
+            )
+          })}
+          {tagIds.length > 0 && (
+            <button
+              type="button"
+              className="link"
+              onClick={() => mudarFiltros((p) => p.delete('tag'))}
+            >
+              Limpar tags
+            </button>
+          )}
+        </div>
+      )}
+
       {isPending && <p className="muted">Carregando…</p>}
       {error && <p className="form-error">{error.message}</p>}
       {!isPending && itens.length === 0 && (
         <div className="card vazio">
-          <p>Nenhum lançamento {aba === 'todos' ? 'cadastrado' : 'nesta situação'}.</p>
-          {aba === 'todos' && <Link to="/lancamentos/novo">Cadastrar o primeiro</Link>}
+          <p>
+            {tagIds.length > 0
+              ? 'Nenhum lançamento com as tags selecionadas.'
+              : `Nenhum lançamento ${aba === 'todos' ? 'cadastrado' : 'nesta situação'}.`}
+          </p>
+          {aba === 'todos' && tagIds.length === 0 && (
+            <Link to="/lancamentos/novo">Cadastrar o primeiro</Link>
+          )}
         </div>
       )}
 
@@ -57,6 +118,7 @@ export function LancamentosPage() {
                 <th>Fornecedor</th>
                 <th>Descrição</th>
                 <th>Categoria</th>
+                <th>Tags</th>
                 <th>Vencimento</th>
                 <th className="num">Valor</th>
                 <th>Situação</th>
@@ -78,6 +140,9 @@ export function LancamentosPage() {
                     {l.descricao ?? <span className="muted">—</span>}
                   </td>
                   <td data-label="Categoria">{l.categoria?.nome ?? '—'}</td>
+                  <td data-label="Tags" className="tags">
+                    <TagChips tags={l.tags} />
+                  </td>
                   <td data-label="Vencimento">{formatDate(l.data_pagamento_prevista)}</td>
                   <td data-label="Valor" className="num">
                     {formatBRL(l.valor)}

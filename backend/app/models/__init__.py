@@ -1,5 +1,5 @@
 from app.models.base import Base
-from app.models.cadastros import Categoria, CentroCusto, Projeto, Supplier
+from app.models.cadastros import Categoria, CentroCusto, Projeto, Supplier, Tag
 from app.models.comprovante import Comprovante, UploadBatch
 from app.models.lancamento import Lancamento
 from app.models.refresh_token import RefreshToken
@@ -15,6 +15,7 @@ __all__ = [
     "Projeto",
     "RefreshToken",
     "Supplier",
+    "Tag",
     "Tenant",
     "UploadBatch",
     "User",

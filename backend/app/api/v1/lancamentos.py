@@ -33,6 +33,10 @@ async def listar(
     categoria_id: uuid.UUID | None = None,
     projeto_id: uuid.UUID | None = None,
     centro_custo_id: uuid.UUID | None = None,
+    tag_id: Annotated[
+        list[uuid.UUID] | None,
+        Query(description="Tag (repita para exigir várias ao mesmo tempo)"),
+    ] = None,
     vencimento_de: date | None = None,
     vencimento_ate: date | None = None,
     limit: Annotated[int, Query(ge=1, le=svc.LIMITE_MAXIMO)] = 50,
@@ -46,6 +50,7 @@ async def listar(
         categoria_id=categoria_id,
         projeto_id=projeto_id,
         centro_custo_id=centro_custo_id,
+        tag_ids=tuple(tag_id or ()),
         vencimento_de=vencimento_de,
         vencimento_ate=vencimento_ate,
     )

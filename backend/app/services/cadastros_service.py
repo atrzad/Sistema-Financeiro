@@ -1,4 +1,4 @@
-"""Categorias, projetos e centros de custo (H2.2) — CRUD genérico por modelo."""
+"""Categorias, projetos, centros de custo (H2.2) e tags — CRUD genérico por modelo."""
 
 import uuid
 
@@ -8,7 +8,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.errors import ProblemError
-from app.models import Categoria, CentroCusto, Projeto
+from app.models import Categoria, CentroCusto, Projeto, Tag
 
 CATEGORIAS_PADRAO = [
     "Alimentação",
@@ -20,15 +20,32 @@ CATEGORIAS_PADRAO = [
     "Outros",
 ]
 
-_ORDEM = {Categoria: Categoria.nome, Projeto: Projeto.nome, CentroCusto: CentroCusto.codigo}
+TAGS_PADRAO = [
+    "Recorrente",
+    "Aquisição",
+    "Serviços prestados",
+    "Concessionárias",
+    "Manutenção geral",
+    "Despesas administrativas",
+    "Materiais para manutenção",
+    "Folha de pagamento",
+]
+
+_ORDEM = {
+    Categoria: Categoria.nome,
+    Projeto: Projeto.nome,
+    CentroCusto: CentroCusto.codigo,
+    Tag: Tag.nome,
+}
 _DUPLICADO = {
     Categoria: "Já existe uma categoria com este nome.",
     Projeto: "Já existe um projeto com este nome.",
     CentroCusto: "Já existe um centro de custo com este código.",
+    Tag: "Já existe uma tag com este nome.",
 }
 
 
-async def listar[M: (Categoria, Projeto, CentroCusto)](
+async def listar[M: (Categoria, Projeto, CentroCusto, Tag)](
     db: AsyncSession, model: type[M], incluir_inativos: bool
 ) -> list[M]:
     query = select(model).order_by(_ORDEM[model])
@@ -37,7 +54,7 @@ async def listar[M: (Categoria, Projeto, CentroCusto)](
     return list(await db.scalars(query))
 
 
-async def criar[M: (Categoria, Projeto, CentroCusto)](
+async def criar[M: (Categoria, Projeto, CentroCusto, Tag)](
     db: AsyncSession, model: type[M], tenant_id: uuid.UUID, data: BaseModel
 ) -> M:
     valores = {k: v.strip() if isinstance(v, str) else v for k, v in data.model_dump().items()}
@@ -52,7 +69,7 @@ async def criar[M: (Categoria, Projeto, CentroCusto)](
     return obj
 
 
-async def atualizar[M: (Categoria, Projeto, CentroCusto)](
+async def atualizar[M: (Categoria, Projeto, CentroCusto, Tag)](
     db: AsyncSession, model: type[M], obj_id: uuid.UUID, data: BaseModel
 ) -> M:
     obj = await db.get(model, obj_id)
@@ -74,5 +91,13 @@ async def garantir_categorias_padrao(db: AsyncSession, tenant_id: uuid.UUID) -> 
     existentes = set(await db.scalars(select(Categoria.nome)))
     novas = [n for n in CATEGORIAS_PADRAO if n not in existentes]
     db.add_all(Categoria(tenant_id=tenant_id, nome=n) for n in novas)
+    await db.flush()
+    return len(novas)
+
+
+async def garantir_tags_padrao(db: AsyncSession, tenant_id: uuid.UUID) -> int:
+    existentes = {n.casefold() for n in await db.scalars(select(Tag.nome))}
+    novas = [n for n in TAGS_PADRAO if n.casefold() not in existentes]
+    db.add_all(Tag(tenant_id=tenant_id, nome=n) for n in novas)
     await db.flush()
     return len(novas)

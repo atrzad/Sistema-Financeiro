@@ -109,3 +109,19 @@ class CentroCustoOut(BaseModel):
     codigo: str
     nome: str
     ativo: bool
+
+
+# --- Tags (tipo de conta) --------------------------------------------------------
+
+
+class TagIn(BaseModel):
+    nome: str = Field(min_length=2, max_length=50)
+
+
+class TagUpdate(BaseModel):
+    nome: str | None = Field(default=None, min_length=2, max_length=50)
+    ativo: bool | None = None
+
+
+class TagOut(CategoriaOut):
+    pass
