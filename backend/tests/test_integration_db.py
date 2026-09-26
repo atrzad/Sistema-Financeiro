@@ -1,6 +1,6 @@
 """Testes contra Postgres real (com os scripts de infra/postgres/init aplicados).
 
-Pulados automaticamente se o banco não estiver acessível. No CI, rodam sempre.
+Pulados se o banco não estiver acessível; no CI (REQUIRE_SERVICES=1), a falta do banco falha.
 """
 
 import asyncio
@@ -16,6 +16,7 @@ from sqlalchemy.exc import DBAPIError
 from sqlalchemy.ext.asyncio import create_async_engine
 
 from app.core.config import get_settings
+from tests.servicos import servico_indisponivel
 
 pytestmark = pytest.mark.integration
 
@@ -48,7 +49,7 @@ def urls() -> tuple[str, str]:
     try:
         _run(_query(api, "SELECT 1"))
     except (OSError, DBAPIError) as exc:
-        pytest.skip(f"Postgres indisponível: {exc!r}")
+        servico_indisponivel(f"Postgres indisponível: {exc!r}")
     command.upgrade(_alembic_cfg(), "head")
     return api, owner
 

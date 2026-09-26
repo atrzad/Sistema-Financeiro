@@ -94,6 +94,7 @@ from app.models import Tenant, User  # noqa: E402
 from app.services.auth_service import AuthService  # noqa: E402
 from app.services.lote_cache import LoteStatusCache, get_lote_cache  # noqa: E402
 from app.services.rate_limit import LoginRateLimiter  # noqa: E402
+from tests.servicos import servico_indisponivel  # noqa: E402
 
 SENHA = "Senha@123"
 _SENHA_HASH = hash_password(SENHA)
@@ -121,7 +122,7 @@ def database() -> None:
     try:
         asyncio.run(_owner_exec("SELECT 1"))
     except (OSError, DBAPIError) as exc:
-        pytest.skip(f"Postgres indisponível: {exc!r}")
+        servico_indisponivel(f"Postgres indisponível: {exc!r}")
     command.upgrade(alembic_config(), "head")
 
 
@@ -246,5 +247,5 @@ def storage_bucket() -> str:
     except ClientError:
         s3.create_bucket(Bucket=bucket, ObjectLockEnabledForBucket=True)
     except BotoCoreError as exc:
-        pytest.skip(f"Storage indisponível: {exc!r}")
+        servico_indisponivel(f"Storage indisponível: {exc!r}")
     return bucket
