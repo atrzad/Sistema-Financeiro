@@ -26,6 +26,7 @@ Schema PostgreSQL 16 refinado a partir da seção 6 do [plano original](../plano
 | 16 | Relatório fechado mudaria se um lançamento fosse editado | `relatorios_prestacao.snapshot` JSONB congelado no fechamento | 09 |
 | 17 | Fuzzy matching repetiria a mesma sugestão sempre | Tabela `supplier_aliases` memoriza confirmações | 05 |
 | 18 | Exportação prevista só para relatórios de prestação de contas | RF12: exportação de qualquer listagem para planilha; `relatorio_exportacoes` generalizada em `exportacoes`; ação `exportar` no `audit_log` | 07/09 |
+| 19 | Categoria única não expressa características que se somam (conta recorrente **e** de concessionária) | RF13: tabela `tags` por empresa + `lancamento_tags` (N:N), com tags padrão por tipo de conta; a categoria continua única | extra (0005) |
 
 ## 2. Diagrama ER (resumo)
 
@@ -42,6 +43,8 @@ erDiagram
     faixas_valor ||--o{ lancamentos : enquadra
     projetos ||--o{ lancamentos : agrupa
     centros_custo ||--o{ lancamentos : agrupa
+    tags ||--o{ lancamento_tags : marca
+    lancamentos ||--o{ lancamento_tags : recebe
     lancamentos ||--o{ lancamento_itens : detalha
     lancamentos ||--o{ pagamento_eventos : historico
     lancamentos ||--o{ aprovacoes : historico
@@ -246,6 +249,29 @@ CREATE INDEX ix_comp_status ON comprovantes (status_processamento, created_at); 
 CREATE FUNCTION listar_tenants_ativos() RETURNS SETOF uuid
     LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public, pg_temp
     AS $$ SELECT id FROM tenants WHERE ativo ORDER BY created_at $$;
+
+-- ========== Tags por tipo de conta (RF13, fora do plano original; migração 0005) ==========
+-- Várias por lançamento (ex.: Recorrente + Concessionárias). A categoria continua única.
+-- Tags padrão de cada empresa: Recorrente, Aquisição, Serviços prestados, Concessionárias,
+-- Manutenção geral, Despesas administrativas, Materiais para manutenção, Folha de pagamento.
+CREATE TABLE tags (
+    id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    tenant_id   UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    nome        VARCHAR(50) NOT NULL,
+    ativo       BOOLEAN NOT NULL DEFAULT true,   -- desativada: some dos formulários, fica nos lançamentos
+    created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at  TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE UNIQUE INDEX uq_tags_nome ON tags (tenant_id, lower(nome));  -- "recorrente" = "Recorrente"
+
+-- tenant_id vem da sessão (o ORM grava só o par); o RLS confere o WITH CHECK.
+CREATE TABLE lancamento_tags (
+    tenant_id      UUID NOT NULL DEFAULT app_current_tenant() REFERENCES tenants(id) ON DELETE CASCADE,
+    lancamento_id  UUID NOT NULL REFERENCES lancamentos(id) ON DELETE CASCADE,
+    tag_id         UUID NOT NULL REFERENCES tags(id) ON DELETE CASCADE,
+    PRIMARY KEY (lancamento_id, tag_id)
+);
+CREATE INDEX ix_lancamento_tags_tag ON lancamento_tags (tenant_id, tag_id);  -- filtro por tag
 
 -- ========== Sprint 05 ==========
 CREATE TABLE lancamento_itens (

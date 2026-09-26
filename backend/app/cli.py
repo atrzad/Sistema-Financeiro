@@ -12,7 +12,7 @@ from pathlib import Path
 from app.core.security import hash_password
 from app.db.tenant import resolve_tenant, tenant_session
 from app.models import Tenant, User
-from app.services.cadastros_service import garantir_categorias_padrao
+from app.services.cadastros_service import garantir_categorias_padrao, garantir_tags_padrao
 
 SENHA_DEMO = "Senha@123"
 
@@ -35,9 +35,10 @@ async def seed() -> None:
         if existente:
             async with tenant_session(existente) as db:
                 novas = await garantir_categorias_padrao(db, existente)
-            print(
-                f"· {slug}: já existe" + (f" — {novas} categorias padrão criadas" if novas else "")
-            )
+                novas_tags = await garantir_tags_padrao(db, existente)
+            extras = [f"{novas} categorias padrão"] if novas else []
+            extras += [f"{novas_tags} tags padrão"] if novas_tags else []
+            print(f"· {slug}: já existe" + (f" — criadas: {', '.join(extras)}" if extras else ""))
             continue
         tenant_id = uuid.uuid4()
         async with tenant_session(tenant_id) as db:
@@ -55,6 +56,7 @@ async def seed() -> None:
                     )
                 )
             await garantir_categorias_padrao(db, tenant_id)
+            await garantir_tags_padrao(db, tenant_id)
         print(f"✔ {slug}: {nome}")
         for _, local, role, _nivel in USUARIOS:
             print(f"    {role:<12} {local}@{dominio}")

@@ -20,14 +20,16 @@ export const ABAS: { id: Aba; label: string; status: StatusEfetivo[] }[] = [
 
 const KEY = 'lancamentos'
 
-export function useLancamentos(aba: Aba) {
+/** `tagIds`: o lançamento precisa ter todas as tags escolhidas. */
+export function useLancamentos(aba: Aba, tagIds: string[] = []) {
   const status = ABAS.find((a) => a.id === aba)?.status ?? []
   return useInfiniteQuery({
-    queryKey: [KEY, 'lista', aba],
+    queryKey: [KEY, 'lista', aba, tagIds],
     initialPageParam: null as string | null,
     queryFn: ({ pageParam }) => {
       const params = new URLSearchParams({ limit: '50' })
       status.forEach((s) => params.append('status', s))
+      tagIds.forEach((t) => params.append('tag_id', t))
       if (pageParam) params.set('cursor', pageParam)
       return apiFetch<LancamentoPage>(`/api/v1/lancamentos?${params}`)
     },

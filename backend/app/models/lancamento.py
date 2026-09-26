@@ -6,7 +6,7 @@ from sqlalchemy import ForeignKey, Numeric, SmallInteger, String, text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base
-from app.models.cadastros import Categoria, CentroCusto, Projeto, Supplier
+from app.models.cadastros import Categoria, CentroCusto, Projeto, Supplier, Tag, lancamento_tags
 from app.models.user import User
 
 
@@ -45,3 +45,6 @@ class Lancamento(Base):
     projeto: Mapped[Projeto | None] = relationship(lazy="raise")
     centro_custo: Mapped[CentroCusto | None] = relationship(lazy="raise")
     usuario: Mapped[User] = relationship(foreign_keys=[usuario_id], lazy="raise")
+    tags: Mapped[list[Tag]] = relationship(
+        secondary=lancamento_tags, order_by=Tag.nome, lazy="raise"
+    )

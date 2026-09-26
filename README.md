@@ -2,7 +2,7 @@
 
 > Captura de comprovantes (boletos, recibos, notas fiscais) por scanner/câmera ou upload, extração automática via OCR, organização por faixa de valor e vencimento, controle de pagamento de boletos e geração de relatórios de prestação de contas — multiempresa, com isolamento por tenant.
 
-**Status:** Sprints [00](docs/sprints/sprint-00.md) (fundação), [01](docs/sprints/sprint-01.md) (login e multiempresa) e [02](docs/sprints/sprint-02.md) (fornecedores, cadastros e lançamentos) implementadas — Marco M1 atingido. Sprint [03](docs/sprints/sprint-03.md) (upload em lote) implementada, em validação ponta a ponta
+**Status:** Sprints [00](docs/sprints/sprint-00.md) (fundação), [01](docs/sprints/sprint-01.md) (login e multiempresa) e [02](docs/sprints/sprint-02.md) (fornecedores, cadastros e lançamentos) implementadas — Marco M1 atingido. Sprint [03](docs/sprints/sprint-03.md) (upload em lote) integrada, com os testes de integração (Postgres + RustFS) verdes no CI — faltam a medição de desempenho e a demo. Fora do plano: tags por tipo de conta nos lançamentos (RF13)
 
 ---
 
@@ -49,6 +49,7 @@ O documento de origem com todo o levantamento está em [`plano_completo_projeto_
 | RF10 | Multiempresa com isolamento por tenant | [01](docs/sprints/sprint-01.md) |
 | RF11 | Upload de PDF multi-página e imagens | [03](docs/sprints/sprint-03.md) |
 | RF12 | Exportação das tabelas do sistema para planilha (XLSX/CSV) | [07](docs/sprints/sprint-07.md), [08](docs/sprints/sprint-08.md), [09](docs/sprints/sprint-09.md) |
+| RF13 | Tags por tipo de conta (recorrente, concessionárias, folha de pagamento...), várias por lançamento, com filtro na listagem | extra ([modelo de dados](docs/modelo-de-dados.md)) |
 
 A matriz completa (incluindo requisitos não funcionais) está em [`docs/sprints/README.md`](docs/sprints/README.md#matriz-de-rastreabilidade).
 

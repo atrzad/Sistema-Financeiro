@@ -883,3 +883,95 @@ fieldset {
     flex-wrap: wrap;
   }
 }
+
+/* --- Tags por tipo de conta ------------------------------------------------------- */
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.chip {
+  display: inline-flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.15rem 0.6rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--neutral-soft);
+  color: var(--text);
+  font-size: 0.8rem;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+label.chip,
+button.chip {
+  cursor: pointer;
+}
+
+.chip-marcado {
+  background: var(--primary-soft);
+  border-color: var(--primary);
+  color: var(--primary);
+  font-weight: 600;
+}
+
+/* A caixa de seleção fica escondida: o foco do teclado aparece no próprio chip. */
+.chip:focus-within,
+button.chip:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+fieldset:disabled .chip {
+  cursor: default;
+  opacity: 0.7;
+}
+
+.campo-tags legend {
+  font-size: 0.9rem;
+  font-weight: 500;
+  margin-bottom: 0.4rem;
+}
+
+.filtro-tags {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem;
+  margin: -0.25rem 0 1rem;
+}
+
+.filtro-tags .rotulo {
+  color: var(--muted);
+  font-size: 0.85rem;
+  margin-right: 0.15rem;
+}
+
+button.link {
+  border: 0;
+  background: none;
+  padding: 0.15rem 0.3rem;
+  color: var(--primary);
+  text-decoration: underline;
+  font-size: 0.85rem;
+}
+
+.tabela-lancamentos td.tags {
+  white-space: normal;
+  min-width: 120px;
+  max-width: 260px;
+}
+
+@media (max-width: 720px) {
+  .tabela-lancamentos td.tags {
+    max-width: none;
+    padding-top: 0.25rem;
+  }
+}

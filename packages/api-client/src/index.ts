@@ -24,6 +24,7 @@ export type SupplierRef = S['SupplierRef']
 export type CategoriaOut = S['CategoriaOut']
 export type ProjetoOut = S['ProjetoOut']
 export type CentroCustoOut = S['CentroCustoOut']
+export type TagOut = S['TagOut']
 
 export type LancamentoOut = S['LancamentoOut']
 export type LancamentoIn = S['LancamentoIn']

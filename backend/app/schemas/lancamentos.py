@@ -9,6 +9,7 @@ from app.domain.status import StatusEfetivo
 from app.schemas.cadastros import SupplierRef
 
 FormaPagamento = Literal["boleto", "pix", "cartao", "dinheiro", "transferencia", "outro"]
+MAX_TAGS = 20
 Valor = Annotated[Decimal, Field(gt=0, max_digits=12, decimal_places=2, examples=["245.90"])]
 
 
@@ -30,6 +31,7 @@ class LancamentoIn(BaseModel):
     descricao: str | None = Field(default=None, max_length=500)
     forma_pagamento: FormaPagamento | None = None
     linha_digitavel: str | None = Field(default=None, max_length=60)
+    tag_ids: list[uuid.UUID] = Field(default_factory=list, max_length=MAX_TAGS)
 
     _linha = field_validator("linha_digitavel")(_linha)
 
@@ -47,6 +49,8 @@ class LancamentoUpdate(BaseModel):
     descricao: str | None = Field(default=None, max_length=500)
     forma_pagamento: FormaPagamento | None = None
     linha_digitavel: str | None = Field(default=None, max_length=60)
+    # Substitui o conjunto inteiro de tags; null ou [] remove todas.
+    tag_ids: list[uuid.UUID] | None = Field(default=None, max_length=MAX_TAGS)
 
     _linha = field_validator("linha_digitavel")(_linha)
 
@@ -72,6 +76,7 @@ class LancamentoOut(BaseModel):
     categoria: Ref | None
     projeto: Ref | None
     centro_custo: CentroCustoRef | None
+    tags: list[Ref]
     usuario: Ref
     descricao: str | None
     forma_pagamento: FormaPagamento | None

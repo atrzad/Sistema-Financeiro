@@ -1,14 +1,15 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 
 import { apiFetch } from '../../lib/api'
-import type { CategoriaOut, CentroCustoOut, ProjetoOut } from '../../lib/types'
+import type { CategoriaOut, CentroCustoOut, ProjetoOut, TagOut } from '../../lib/types'
 
-export type TipoCadastro = 'categorias' | 'projetos' | 'centros-custo'
+export type TipoCadastro = 'categorias' | 'projetos' | 'centros-custo' | 'tags'
 
 interface PorTipo {
   categorias: CategoriaOut
   projetos: ProjetoOut
   'centros-custo': CentroCustoOut
+  tags: TagOut
 }
 
 export function useCadastro<T extends TipoCadastro>(tipo: T, incluirInativos = false) {

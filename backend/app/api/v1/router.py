@@ -13,6 +13,7 @@ def build_router(settings: Settings) -> APIRouter:
     router.include_router(cadastros.categorias)
     router.include_router(cadastros.projetos)
     router.include_router(cadastros.centros_custo)
+    router.include_router(cadastros.tags)
     router.include_router(lancamentos.router)
     router.include_router(uploads.router)
     if settings.is_local:

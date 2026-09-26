@@ -59,7 +59,7 @@ RF02 (itens, fornecedor) · RF04 · Regra "Confiança do OCR" · Regra "Nome fan
 ## 4. Tarefas técnicas
 
 **Dados**
-- [ ] Migração `0005_revisao`: `lancamento_itens`, `audit_log`, `supplier_aliases (tenant_id, texto_normalizado, supplier_id)`, `tenants.limiar_confianca NUMERIC(3,2) DEFAULT 0.80`, RLS
+- [ ] Migração `0006_revisao` (a `0005` ficou com as tags): `lancamento_itens`, `audit_log`, `supplier_aliases (tenant_id, texto_normalizado, supplier_id)`, `tenants.limiar_confianca NUMERIC(3,2) DEFAULT 0.80`, RLS
 - [ ] Função SQL `normalizar_nome(text)` (`unaccent` + remoção de sufixos societários) com índice trigram de expressão
 
 **Backend**

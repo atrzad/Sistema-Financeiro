@@ -19,7 +19,7 @@ from sqlalchemy.orm import selectinload
 from app.core.errors import ProblemError
 from app.core.security import AccessClaims
 from app.domain.status import StatusEfetivo, dias_para_vencimento, status_efetivo
-from app.models import Categoria, CentroCusto, Lancamento, Projeto, Supplier
+from app.models import Categoria, CentroCusto, Lancamento, Projeto, Supplier, Tag
 from app.schemas.cadastros import SupplierRef
 from app.schemas.lancamentos import (
     CentroCustoRef,
@@ -37,6 +37,7 @@ _RELACOES = (
     selectinload(Lancamento.projeto),
     selectinload(Lancamento.centro_custo),
     selectinload(Lancamento.usuario),
+    selectinload(Lancamento.tags),
 )
 
 
@@ -56,6 +57,7 @@ def to_out(lanc: Lancamento, hoje: date) -> LancamentoOut:
         centro_custo=CentroCustoRef.model_validate(lanc.centro_custo)
         if lanc.centro_custo
         else None,
+        tags=[Ref.model_validate(t) for t in lanc.tags],
         usuario=Ref(id=lanc.usuario.id, nome=lanc.usuario.nome),
         descricao=lanc.descricao,
         forma_pagamento=lanc.forma_pagamento,
@@ -112,6 +114,26 @@ async def _validar_referencias(db: AsyncSession, dados: dict[str, Any]) -> None:
             )
 
 
+async def _tags(db: AsyncSession, ids: list[uuid.UUID], atuais: list[Tag]) -> list[Tag]:
+    """Tags pedidas, validadas sob RLS. Uma tag desativada continua nos lançamentos
+    que já a tinham, mas não pode ser adicionada a outros."""
+    ids = list(dict.fromkeys(ids))
+    if not ids:
+        return []
+    encontradas = {t.id: t for t in await db.scalars(select(Tag).where(Tag.id.in_(ids)))}
+    ja_tinha = {t.id for t in atuais}
+    invalidas = [
+        i for i in ids if i not in encontradas or (not encontradas[i].ativo and i not in ja_tinha)
+    ]
+    if invalidas:
+        raise ProblemError(
+            422,
+            "Tag inexistente ou inativa.",
+            errors=[{"campo": "tag_ids", "erro": "inválido", "ids": [str(i) for i in invalidas]}],
+        )
+    return [encontradas[i] for i in ids]
+
+
 # --- Casos de uso ---------------------------------------------------------------------
 
 
@@ -124,11 +146,16 @@ async def obter(db: AsyncSession, user: AccessClaims, lanc_id: uuid.UUID) -> Lan
 
 async def criar(db: AsyncSession, user: AccessClaims, data: LancamentoIn) -> Lancamento:
     dados = data.model_dump()
+    tag_ids = dados.pop("tag_ids")
     await _validar_referencias(db, dados)
     lanc = Lancamento(tenant_id=user.tenant_id, usuario_id=user.user_id, **dados)
+    lanc.tags = await _tags(db, tag_ids, [])
     db.add(lanc)
     await db.flush()
-    return await obter(db, user, lanc.id)
+    lanc_id = lanc.id
+    # Relê do banco: a coleção montada em memória ficaria na ordem do pedido.
+    db.expire(lanc)
+    return await obter(db, user, lanc_id)
 
 
 def _versao_esperada(if_match: str | None) -> int | None:
@@ -171,6 +198,8 @@ async def atualizar(
         if bloqueados:
             raise ProblemError(409, "Lançamento pago: valor e vencimento não podem ser alterados.")
 
+    if "tag_ids" in changes:
+        lanc.tags = await _tags(db, changes.pop("tag_ids") or [], lanc.tags)
     await _validar_referencias(db, changes)
     for k, v in changes.items():
         setattr(lanc, k, v)
@@ -214,6 +243,7 @@ class Filtros:
     centro_custo_id: uuid.UUID | None = None
     vencimento_de: date | None = None
     vencimento_ate: date | None = None
+    tag_ids: tuple[uuid.UUID, ...] = ()  # o lançamento precisa ter todas
 
 
 def _encode_cursor(lanc: Lancamento) -> str:
@@ -254,6 +284,8 @@ async def listar(
         valor = getattr(filtros, campo)
         if valor is not None:
             query = query.where(getattr(Lancamento, campo) == valor)
+    for tag_id in dict.fromkeys(filtros.tag_ids):
+        query = query.where(Lancamento.tags.any(Tag.id == tag_id))
     if filtros.vencimento_de:
         query = query.where(prevista >= filtros.vencimento_de)
     if filtros.vencimento_ate:
