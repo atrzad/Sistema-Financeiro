@@ -13,13 +13,27 @@ from sqlalchemy.ext.asyncio import (
     async_sessionmaker,
     create_async_engine,
 )
+from sqlalchemy.pool import NullPool
 
 from app.core.config import get_settings
+
+_null_pool = False
+
+
+def use_null_pool() -> None:
+    """Workers Celery: cada task roda num event loop novo, e conexões asyncpg não
+    podem ser reaproveitadas entre loops — então nada de pool nesses processos."""
+    global _null_pool
+    _null_pool = True
+    get_engine.cache_clear()
+    get_sessionmaker.cache_clear()
 
 
 @lru_cache
 def get_engine() -> AsyncEngine:
     settings = get_settings()
+    if _null_pool:
+        return create_async_engine(str(settings.database_url), poolclass=NullPool)
     return create_async_engine(
         str(settings.database_url),
         pool_pre_ping=True,

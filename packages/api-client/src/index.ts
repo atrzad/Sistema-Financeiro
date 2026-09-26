@@ -32,4 +32,13 @@ export type LancamentoPage = S['LancamentoPage']
 export type StatusEfetivo = LancamentoOut['status_efetivo']
 export type FormaPagamento = NonNullable<LancamentoOut['forma_pagamento']>
 
+export type NovoLote = S['NovoLote']
+export type ArquivoDeclarado = S['ArquivoDeclarado']
+export type LoteCriado = S['LoteCriado']
+export type UploadInstrucao = S['UploadInstrucao']
+export type Confirmacao = S['Confirmacao']
+export type LoteStatus = S['LoteStatus']
+export type ItemStatus = S['ItemStatus']
+export type StatusProcessamento = ItemStatus['status']
+
 export type HealthReport = S['HealthReport']

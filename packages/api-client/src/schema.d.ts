@@ -318,10 +318,147 @@ export interface paths {
     patch: operations['atualizar_api_v1_lancamentos__lanc_id__patch']
     trace?: never
   }
+  '/api/v1/uploads/batch': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * Criar Lote
+     * @description Cria o lote e devolve uma URL de upload por arquivo (PUT direto no storage).
+     *
+     *     A URL fixa tipo e tamanho declarados: um arquivo diferente é recusado pelo storage.
+     */
+    post: operations['criar_lote_api_v1_uploads_batch_post']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/v1/uploads/{comprovante_id}/complete': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * Confirmar
+     * @description Confirma o envio e dispara a validação em segundo plano. Idempotente.
+     */
+    post: operations['confirmar_api_v1_uploads__comprovante_id__complete_post']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/v1/uploads/{comprovante_id}/retry-url': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * Nova Url
+     * @description Nova URL para reenviar um arquivo cujo upload falhou ou expirou.
+     */
+    post: operations['nova_url_api_v1_uploads__comprovante_id__retry_url_post']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/v1/uploads/batch/{batch_id}/status': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * Status Lote
+     * @description Status item a item + agregados. Pensado para polling (servido do cache).
+     */
+    get: operations['status_lote_api_v1_uploads_batch__batch_id__status_get']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/v1/comprovantes/{comprovante_id}/arquivo': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * Baixar Arquivo
+     * @description Redireciona para o original (link temporário, sempre como download).
+     */
+    get: operations['baixar_arquivo_api_v1_comprovantes__comprovante_id__arquivo_get']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/v1/comprovantes/{comprovante_id}/thumbnail': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** Miniatura */
+    get: operations['miniatura_api_v1_comprovantes__comprovante_id__thumbnail_get']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
 }
 export type webhooks = Record<string, never>
 export interface components {
   schemas: {
+    /** ArquivoDeclarado */
+    ArquivoDeclarado: {
+      /**
+       * Nome
+       * @example boleto_luz.pdf
+       */
+      nome: string
+      /**
+       * Tamanho Bytes
+       * @example 184320
+       */
+      tamanho_bytes: number
+      /**
+       * Mime Type
+       * @description Informativo: o tipo real é detectado pelo servidor
+       */
+      mime_type?: string | null
+    }
     /** CategoriaIn */
     CategoriaIn: {
       /** Nome */
@@ -396,6 +533,15 @@ export interface components {
       /** Detail */
       detail?: string | null
     }
+    /** Confirmacao */
+    Confirmacao: {
+      /**
+       * Status
+       * @enum {string}
+       */
+      status:
+        'enviando' | 'validando' | 'processando_ocr' | 'aguardando_revisao' | 'concluido' | 'erro'
+    }
     /** HTTPValidationError */
     HTTPValidationError: {
       /** Detail */
@@ -410,6 +556,34 @@ export interface components {
       components: {
         [key: string]: components['schemas']['ComponentHealth']
       }
+    }
+    /** ItemStatus */
+    ItemStatus: {
+      /**
+       * Comprovante Id
+       * Format: uuid
+       */
+      comprovante_id: string
+      /** Nome */
+      nome: string
+      /** Tamanho Bytes */
+      tamanho_bytes: number
+      /** Mime Type */
+      mime_type: string
+      /**
+       * Status
+       * @enum {string}
+       */
+      status:
+        'enviando' | 'validando' | 'processando_ocr' | 'aguardando_revisao' | 'concluido' | 'erro'
+      /** Erro Msg */
+      erro_msg: string | null
+      /** Total Paginas */
+      total_paginas: number
+      /** Possivel Duplicado */
+      possivel_duplicado: boolean
+      /** Tem Miniatura */
+      tem_miniatura: boolean
     }
     /** LancamentoIn */
     LancamentoIn: {
@@ -539,6 +713,39 @@ export interface components {
       /** Senha */
       senha: string
     }
+    /** LoteCriado */
+    LoteCriado: {
+      /**
+       * Batch Id
+       * Format: uuid
+       */
+      batch_id: string
+      /**
+       * Expira Em
+       * Format: date-time
+       */
+      expira_em: string
+      /** Itens */
+      itens: components['schemas']['UploadInstrucao'][]
+    }
+    /** LoteStatus */
+    LoteStatus: {
+      /**
+       * Batch Id
+       * Format: uuid
+       */
+      batch_id: string
+      /** Total */
+      total: number
+      /** Concluidos */
+      concluidos: number
+      /** Com Erro */
+      com_erro: number
+      /** Em Andamento */
+      em_andamento: number
+      /** Itens */
+      itens: components['schemas']['ItemStatus'][]
+    }
     /** Me */
     Me: {
       /**
@@ -558,6 +765,17 @@ export interface components {
       /** Nivel Aprovacao */
       nivel_aprovacao: number
       tenant: components['schemas']['TenantInfo']
+    }
+    /** NovoLote */
+    NovoLote: {
+      /** Arquivos */
+      arquivos: components['schemas']['ArquivoDeclarado'][]
+      /**
+       * Origem
+       * @default web
+       * @enum {string}
+       */
+      origem: 'web' | 'mobile'
     }
     /** ProjetoIn */
     ProjetoIn: {
@@ -683,6 +901,22 @@ export interface components {
       /** Expires In */
       expires_in: number
       user: components['schemas']['Me']
+    }
+    /** UploadInstrucao */
+    UploadInstrucao: {
+      /**
+       * Comprovante Id
+       * Format: uuid
+       */
+      comprovante_id: string
+      /** Nome */
+      nome: string
+      /** Upload Url */
+      upload_url: string
+      /** Headers */
+      headers: {
+        [key: string]: string
+      }
     }
     /** UserCreate */
     UserCreate: {
@@ -1618,6 +1852,190 @@ export interface operations {
         content: {
           'application/json': components['schemas']['LancamentoOut']
         }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  criar_lote_api_v1_uploads_batch_post: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['NovoLote']
+      }
+    }
+    responses: {
+      /** @description Successful Response */
+      201: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['LoteCriado']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  confirmar_api_v1_uploads__comprovante_id__complete_post: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        comprovante_id: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      202: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Confirmacao']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  nova_url_api_v1_uploads__comprovante_id__retry_url_post: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        comprovante_id: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['UploadInstrucao']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  status_lote_api_v1_uploads_batch__batch_id__status_get: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        batch_id: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['LoteStatus']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  baixar_arquivo_api_v1_comprovantes__comprovante_id__arquivo_get: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        comprovante_id: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      302: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  miniatura_api_v1_comprovantes__comprovante_id__thumbnail_get: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        comprovante_id: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      302: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
       }
       /** @description Validation Error */
       422: {

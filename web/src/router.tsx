@@ -8,6 +8,7 @@ import { CadastrosPage } from './features/cadastros/CadastrosPage'
 import { FornecedoresPage } from './features/fornecedores/FornecedoresPage'
 import { LancamentoFormPage } from './features/lancamentos/LancamentoFormPage'
 import { LancamentosPage } from './features/lancamentos/LancamentosPage'
+import { UploadPage } from './features/upload/UploadPage'
 import { HomePage } from './pages/HomePage'
 import { NotFoundPage } from './pages/NotFoundPage'
 import { PlaceholderPage } from './pages/PlaceholderPage'
@@ -35,7 +36,7 @@ export const routes: RouteObject[] = [
           </ProtectedRoute>
         ),
       },
-      { path: 'upload', element: <PlaceholderPage title="Enviar comprovantes" sprint="03" /> },
+      { path: 'upload', element: <UploadPage /> },
       { path: 'relatorios', element: <PlaceholderPage title="Relatórios" sprint="09" /> },
       {
         path: 'usuarios',

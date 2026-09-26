@@ -722,3 +722,164 @@ fieldset {
     font-size: 0.85rem;
   }
 }
+
+/* --- Sprint 03: upload em lote ---------------------------------------------------- */
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.badge-info {
+  background: var(--primary-soft);
+  color: var(--primary);
+}
+
+.nav-badge {
+  margin-left: 0.4rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 0.05rem 0.4rem;
+  border-radius: 999px;
+  background: var(--primary);
+  color: var(--surface);
+}
+
+.dropzone {
+  max-width: 760px;
+  border: 2px dashed var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+  padding: 1.75rem 1rem;
+  text-align: center;
+  margin-bottom: 1rem;
+}
+
+.dropzone p {
+  margin: 0 0 0.6rem;
+}
+
+.dropzone p.muted {
+  margin: 0.6rem 0 0;
+  font-size: 0.85rem;
+}
+
+.dropzone.arrastando {
+  border-color: var(--primary);
+  background: var(--primary-soft);
+}
+
+.fila-upload {
+  list-style: none;
+  margin: 0 0 1rem;
+  padding: 0;
+  max-width: 760px;
+}
+
+.item-upload {
+  display: grid;
+  grid-template-columns: 48px minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.7rem 1rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.item-upload:last-child {
+  border-bottom: 0;
+}
+
+.item-miniatura {
+  width: 48px;
+  height: 48px;
+  border-radius: 6px;
+  overflow: hidden;
+  background: var(--neutral-soft);
+  display: grid;
+  place-items: center;
+}
+
+.item-miniatura img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.icone-pdf {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--error);
+}
+
+.item-info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  gap: 0.15rem;
+  font-size: 0.9rem;
+}
+
+.item-nome {
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.item-info progress,
+.progresso-geral progress {
+  width: 100%;
+  height: 6px;
+  accent-color: var(--primary);
+}
+
+.item-estado {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.25rem;
+}
+
+.item-acoes button {
+  font-size: 0.85rem;
+  padding: 0.25rem 0.6rem;
+}
+
+.progresso-geral {
+  max-width: 760px;
+  margin-bottom: 1rem;
+}
+
+.progresso-geral p {
+  margin: 0 0 0.3rem;
+}
+
+.acoes-upload {
+  margin-bottom: 0.75rem;
+}
+
+@media (max-width: 720px) {
+  .item-upload {
+    grid-template-columns: 40px minmax(0, 1fr);
+  }
+
+  .item-miniatura {
+    width: 40px;
+    height: 40px;
+  }
+
+  .item-estado,
+  .item-acoes {
+    grid-column: 2;
+    align-items: flex-start;
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+}

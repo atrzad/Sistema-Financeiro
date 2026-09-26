@@ -40,6 +40,9 @@ class Settings(BaseSettings):
     redis_url: RedisDsn
 
     s3_endpoint_url: str | None = None  # None = AWS S3
+    # Endereço do storage visto pelo NAVEGADOR (URLs pré-assinadas). Em Docker, a API
+    # fala com "storage:9000", mas o navegador precisa de "localhost:9000".
+    s3_public_endpoint_url: str | None = None
     s3_access_key: str
     s3_secret_key: str
     s3_region: str = "us-east-1"
@@ -58,6 +61,14 @@ class Settings(BaseSettings):
     cookie_secure: bool = True
     login_max_failures: int = 5
     login_failure_window_s: int = 15 * 60
+
+    # --- Upload de comprovantes (Sprint 03, RNF07/RNF08) ---
+    upload_max_arquivos: int = 10
+    upload_max_bytes_arquivo: int = 10 * 1024 * 1024
+    upload_max_bytes_lote: int = 60 * 1024 * 1024
+    upload_max_paginas_pdf: int = 50
+    upload_url_ttl_s: int = 15 * 60
+    download_url_ttl_s: int = 5 * 60
 
     @field_validator("cors_origins", mode="before")
     @classmethod

@@ -28,7 +28,7 @@ api: ## API em modo dev (http://localhost:8000/docs)
 	cd backend && uv run fastapi dev app/main.py
 
 worker: ## Worker Celery consumindo todas as filas
-	cd backend && uv run celery -A app.workers.celery_app worker -l info -Q celery,validation,ocr,reports,maintenance
+	cd backend && uv run celery -A app.workers.celery_app worker -B -l info -Q celery,validation,ocr,reports,maintenance
 
 web: ## Frontend em modo dev (http://localhost:5173)
 	pnpm --filter web dev
